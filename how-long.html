@@ -101,6 +101,28 @@
                 <option value="120">CATTI 1</option>
             </select>
         </div>
+
+        <div class="form-group">
+            <label for="study-hours">每日学习时长</label>
+            <select id="study-hours">
+                <option value="0.5">0.5小时</option>
+                <option value="1">1小时</option>
+                <option value="1.5">1.5小时</option>
+                <option value="2">2小时</option>
+                <option value="2.5" selected>2.5小时</option>
+                <option value="3">3小时</option>
+                <option value="4">4小时</option>
+                <option value="5">5小时</option>
+                <option value="6">6小时</option>
+                <option value="8">7小时</option>
+                <option value="8">8小时</option>
+                <option value="8">9小时</option>
+                <option value="8">10小时</option>
+                <option value="8">11小时</option>
+                <option value="8">12小时</option>
+            </select>
+            <div class="note">* 默认备考时间为每日2.5小时</div>
+        </div>
         
         <button id="calculate-btn">计算备考时间</button>
         
@@ -112,9 +134,12 @@
             // 获取当前水平和目标水平的值
             const currentLevel = parseFloat(document.getElementById('current-level').value);
             const targetLevel = parseFloat(document.getElementById('target-level').value);
+            const studyHours = parseFloat(document.getElementById('study-hours').value);
+            const basicStudyHours = 2.5;
             
             // 计算所需时间（月）
-            let requiredMonths = targetLevel - currentLevel;
+            let requiredMonths = (targetLevel - currentLevel) * basicStudyHours / studyHours;
+            requiredMonths = Math.round(requiredMonths * 10) / 10;
             
             // 如果结果为负数，则设为0
             if (requiredMonths < 0) {
