@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head> 
+<meta charset='utf-8'> 
+<style>
+    .one{
+        font-size: 24px;
+        white-space: pre-line;
+    }
+</style>
+<style>
+    body{text-align:center}
+</style>
+<title>古典日语动词变形</title>
+<link rel='icon' type='image/x-icon' href='icon/6.ico'/>
+<script type='text/javascript' src='js/kobun_trans.js'></script>
+<script type='text/javascript' src='js/romaji.js'></script>
+<script type='text/javascript' src='js/kobun_dict.js'></script>
+<script type='text/javascript'>
+    function look_up_dict(kanji)
+    {
+        var ans = [[],[],[]];
+        kanji = kata_to_hira(kanji);
+        for(var i=0;i<dict.length;i++)
+        {
+            if(kata_to_hira(dict[i].kaki) == kanji || kata_to_hira(dict[i].yomi) == kanji)
+            {
+                if(dict[i].kaki == '')
+                    ans[2].push(dict[i].yomi);
+                else
+                    ans[2].push(dict[i].kaki);
+                ans[0].push(dict[i].yomi);
+                ans[1].push(dict[i].type);
+            }
+        }
+        return ans;
+    }
+    function work(x)
+    {
+        var verb = document.getElementById('verb').value;
+        verb = verb.replace(/\s*/g,'');
+        verb = romaji_to_hiragana(verb);
+        if(verb == '')
+        {
+            document.getElementById('result').textContent = '';
+            return;
+        }
+        var dict_result = look_up_dict(verb);
+        
+        //alert(verb);
+        var result = '';
+        for(var i=0;i<dict_result[0].length;i++)
+        {
+            var dan = dict_result[1][i];
+            result = result + get_result(dict_result[0][i],dan,dict_result[2][i]) + '\n\n';
+        }
+        if(result == '')
+            result = '找不到“' + verb + '”，变形失败。'
+        document.getElementById('result').textContent = result;
+        document.getElementById('verb').focus();
+        document.getElementById('verb').setSelectionRange(0,document.getElementById('verb').value.length);
+    }
+    function IsPC() {
+        var userAgentInfo = navigator.userAgent;
+        var Agents = ["Android", "iPhone",
+            "SymbianOS", "Windows Phone",
+            "iPad", "iPod"];
+        var flag = true;
+        for (var v = 0; v < Agents.length; v++) {
+            if (userAgentInfo.indexOf(Agents[v]) > 0) {
+                flag = false;
+                break;
+            }
+        }
+        return flag;
+    }
+    function zload()
+    {
+        if(!IsPC())
+            window.location.href='J2.html';
+        document.getElementById('verb').focus();
+        document.getElementById('verb').setSelectionRange(0,document.getElementById('verb').value.length);
+    }
+</script>
+</head>
+<style>
+        body{background:url(pic/pc2.png) top left;
+        background-size:100%;
+        background-attachment: fixed;}
+        </style>
+<body onload="zload()" >
+<h1>古典日语动词变形器</h1>
+<HR>
+<h1>输入动词(终止形)</h1>
+<input type='text' id='verb' value='食ぶ' style='font-size:40px'onkeyup=" if(event.keyCode==13) { work(this); }">
+<HR>
+<label id='result' class ='one' style='font-size: 40px;word-break:break-all;word-wrap:break-word;'></label>
+</body>
+</html>

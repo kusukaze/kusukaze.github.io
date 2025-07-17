@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N1考试估分工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            text-align: center;
+        }
+        .section {
+            display: inline-block;
+            text-align: left;
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .section-name {
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .input-label {
+            width: 120px;
+        }
+        .input-control {
+            display: flex;
+            align-items: center;
+        }
+        input[type="number"] {
+            width: 60px;
+            padding: 5px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            margin: 0 5px;
+        }
+        button {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #calculate-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 20px 0;
+            background-color: #2196F3;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #calculate-btn:hover {
+            background-color: #0b7dda;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-radius: 5px;
+            display: none;
+            text-align: center;
+        }
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .result-table th, .result-table td {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        .result-table th {
+            background-color: #f2f2f2;
+        }
+        .pass {
+            color: #2e7d32;
+            font-weight: bold;
+        }
+        .fail {
+            color: #c62828;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>N1考试估分工具</h1>
+        
+        <div class="section" id="language-section">
+            <div class="section-name">语言知识</div>
+            <div class="input-group">
+                <div class="input-label">答对数量:</div>
+                <div class="input-control">
+                    <button class="decrease" data-section="language" data-type="correct">-</button>
+                    <input type="number" class="correct" data-section="language" min="0" max="44" value="0">
+                    <button class="increase" data-section="language" data-type="correct">+</button>
+                </div>
+            </div>
+            <div class="input-group">
+                <div class="input-label">题目总数:</div>
+                <div class="input-control">
+                    <button class="decrease" data-section="language" data-type="total">-</button>
+                    <input type="number" class="total" data-section="language" min="1" value="44">
+                    <button class="increase" data-section="language" data-type="total">+</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section" id="reading-section">
+            <div class="section-name">阅读</div>
+            <div class="input-group">
+                <div class="input-label">答对数量:</div>
+                <div class="input-control">
+                    <button class="decrease" data-section="reading" data-type="correct">-</button>
+                    <input type="number" class="correct" data-section="reading" min="0" max="22" value="0">
+                    <button class="increase" data-section="reading" data-type="correct">+</button>
+                </div>
+            </div>
+            <div class="input-group">
+                <div class="input-label">题目总数:</div>
+                <div class="input-control">
+                    <button class="decrease" data-section="reading" data-type="total">-</button>
+                    <input type="number" class="total" data-section="reading" min="1" value="22">
+                    <button class="increase" data-section="reading" data-type="total">+</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section" id="listening-section">
+            <div class="section-name">听力</div>
+            <div class="input-group">
+                <div class="input-label">答对数量:</div>
+                <div class="input-control">
+                    <button class="decrease" data-section="listening" data-type="correct">-</button>
+                    <input type="number" class="correct" data-section="listening" min="0" max="30" value="0">
+                    <button class="increase" data-section="listening" data-type="correct">+</button>
+                </div>
+            </div>
+            <div class="input-group">
+                <div class="input-label">题目总数:</div>
+                <div class="input-control">
+                    <button class="decrease" data-section="listening" data-type="total">-</button>
+                    <input type="number" class="total" data-section="listening" min="1" value="30">
+                    <button class="increase" data-section="listening" data-type="total">+</button>
+                </div>
+            </div>
+        </div>
+        
+        <button id="calculate-btn">估分</button>
+        
+        <div id="result">
+            <h2>估分结果</h2>
+            <table class="result-table">
+                <thead>
+                    <tr>
+                        <th>项目</th>
+                        <th>分数</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>语言知识</td>
+                        <td id="language-score">0</td>
+                    </tr>
+                    <tr>
+                        <td>阅读</td>
+                        <td id="reading-score">0</td>
+                    </tr>
+                    <tr>
+                        <td>听力</td>
+                        <td id="listening-score">0</td>
+                    </tr>
+                    <tr>
+                        <td><strong>总分</strong></td>
+                        <td id="total-score"><strong>0</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="margin-top: 15px;">结果: <span id="result-text"></span></p>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 默认题目总数
+            const defaultTotals = {
+                language: 44,
+                reading: 22,
+                listening: 30
+            };
+            
+            // 初始化题目总数
+            document.querySelectorAll('.total').forEach(input => {
+                const section = input.dataset.section;
+                input.value = defaultTotals[section];
+                
+                // 设置答对数量的max属性
+                const correctInput = input.closest('.section').querySelector('.correct');
+                correctInput.max = defaultTotals[section];
+            });
+            
+            // 增加按钮事件
+            document.querySelectorAll('.increase').forEach(button => {
+                button.addEventListener('click', function() {
+                    const section = this.dataset.section;
+                    const type = this.dataset.type;
+                    const input = this.parentElement.querySelector(`.${type}`);
+                    
+                    let value = parseInt(input.value) || 0;
+                    const max = type === 'correct' ? input.max : Infinity;
+                    
+                    if (value < max) {
+                        value++;
+                        input.value = value;
+                        updateButtonStates(input);
+                    }
+                });
+            });
+            
+            // 减少按钮事件
+            document.querySelectorAll('.decrease').forEach(button => {
+                button.addEventListener('click', function() {
+                    const section = this.dataset.section;
+                    const type = this.dataset.type;
+                    const input = this.parentElement.querySelector(`.${type}`);
+                    
+                    let value = parseInt(input.value) || 0;
+                    const min = parseInt(input.min) || 0;
+                    
+                    if (value > min) {
+                        value--;
+                        input.value = value;
+                        updateButtonStates(input);
+                    }
+                });
+            });
+            
+            // 输入框变化事件
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                input.addEventListener('change', function() {
+                    const section = this.dataset.section;
+                    const type = this.dataset.type;
+                    
+                    // 确保答对数量不超过题目总数
+                    if (this.classList.contains('correct')) {
+                        const totalInput = this.closest('.section').querySelector('.total');
+                        const max = parseInt(totalInput.value);
+                        if (parseInt(this.value) > max) {
+                            this.value = max;
+                        }
+                    }
+                    
+                    updateButtonStates(this);
+                });
+                
+                input.addEventListener('input', function() {
+                    // 确保输入的是有效的数字
+                    if (this.value === '' || isNaN(this.value)) {
+                        this.value = this.min || 0;
+                    }
+                    updateButtonStates(this);
+                });
+            });
+            
+            // 更新按钮状态
+            function updateButtonStates(input) {
+                const value = parseInt(input.value) || 0;
+                const min = parseInt(input.min) || 0;
+                const parent = input.parentElement;
+                const decreaseBtn = parent.querySelector('.decrease');
+                const increaseBtn = parent.querySelector('.increase');
+                
+                // 更新减少按钮状态
+                decreaseBtn.disabled = value <= min;
+                
+                // 更新增加按钮状态
+                if (input.classList.contains('correct')) {
+                    const max = parseInt(input.max);
+                    increaseBtn.disabled = value >= max;
+                } else {
+                    increaseBtn.disabled = false;
+                }
+            }
+            
+            // 初始按钮状态
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                updateButtonStates(input);
+            });
+            
+            // 估分按钮事件
+            document.getElementById('calculate-btn').addEventListener('click', function() {
+                const result = calculateScores();
+                displayResults(result);
+            });
+            
+            // 计算分数
+            function calculateScores() {
+                const sections = ['language', 'reading', 'listening'];
+                const result = {};
+                let totalScore = 0;
+                
+                sections.forEach(section => {
+                    const correctInput = document.querySelector(`#${section}-section .correct`);
+                    const totalInput = document.querySelector(`#${section}-section .total`);
+                    
+                    const correct = parseInt(correctInput.value) || 0;
+                    const total = parseInt(totalInput.value) || 1;
+                    const accuracy = correct / total;
+                    
+                    // 计算单项分数
+                    let score;
+                    if (accuracy <= 0) {
+                        score = 0;
+                    } else if (accuracy <= 0.66) {
+                        score = 33 * (accuracy / 0.66);
+                    } else if (accuracy <= 0.97) {
+                        score = 33 + 27 * ((accuracy - 0.66) / (0.97 - 0.66));
+                    } else {
+                        score = 60;
+                    }
+                    
+                    // 四舍五入
+                    score = Math.round(score);
+                    result[section] = score;
+                    totalScore += score;
+                });
+                
+                result.total = totalScore;
+                
+                // 判断是否合格
+                result.passed = (
+                    result.language >= 19 && 
+                    result.reading >= 19 && 
+                    result.listening >= 19 && 
+                    result.total >= 100
+                );
+                
+                return result;
+            }
+            
+            // 显示结果
+            function displayResults(result) {
+                document.getElementById('language-score').textContent = result.language;
+                document.getElementById('reading-score').textContent = result.reading;
+                document.getElementById('listening-score').textContent = result.listening;
+                document.getElementById('total-score').textContent = result.total;
+                
+                const resultText = document.getElementById('result-text');
+                if (result.passed) {
+                    resultText.textContent = '合格';
+                    resultText.className = 'pass';
+                } else {
+                    resultText.textContent = '不合格';
+                    resultText.className = 'fail';
+                }
+                
+                document.getElementById('result').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
