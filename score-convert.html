@@ -71,6 +71,15 @@
             width: 80px;
             text-align: center;
             margin: 0 5px;
+            -moz-appearance: textfield; /* Firefox */
+            appearance: none; /* 标准属性 */
+        }
+
+        /* 针对Webkit浏览器(Chrome/Safari)的额外处理 */
+        .number-input input::-webkit-outer-spin-button,
+        .number-input input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
         }
 
         .number-input button {
