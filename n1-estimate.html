@@ -21,7 +21,7 @@
         }
         .section {
             display: inline-block;
-            text-align: left;
+            text-align: center;
             margin-bottom: 15px;
             padding: 15px;
             background-color: #f5f5f5;
@@ -31,16 +31,19 @@
         }
         .section-name {
             font-weight: bold;
-            margin-bottom: 10px;
-            text-align: center;
+            margin-bottom: 15px;
         }
         .input-group {
             display: flex;
+            justify-content: center;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
         }
         .input-label {
-            width: 120px;
+            width: 100px;
+            text-align: right;
+            margin-right: 10px;
         }
         .input-control {
             display: flex;
@@ -48,31 +51,60 @@
         }
         input[type="number"] {
             width: 60px;
-            padding: 5px;
+            padding: 8px;
             text-align: center;
             border: 1px solid #ddd;
             border-radius: 3px;
             margin: 0 5px;
+            -moz-appearance: textfield;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .btn-group {
+            display: flex;
+            margin-left: 10px;
         }
         button {
             padding: 5px 10px;
-            background-color: #4CAF50;
             color: white;
             border: none;
             border-radius: 3px;
             cursor: pointer;
+            margin: 0 2px;
+            min-width: 30px;
         }
-        button:hover {
+        button.large-btn {
+            min-width: 40px;
+            background-color: #FF9800; /* 橙色 */
+        }
+        button.large-btn:hover {
+            background-color: #F57C00;
+        }
+        button.large-btn:disabled {
+            background-color: #FFCC80;
+        }
+        button.small-btn {
+            background-color: #4CAF50; /* 绿色 */
+        }
+        button.small-btn:hover {
             background-color: #45a049;
         }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
+        button.small-btn:disabled {
+            background-color: #A5D6A7;
+        }
+        button.blue-btn {
+            background-color: #2196F3;
+        }
+        button.blue-btn:hover {
+            background-color: #0b7dda;
         }
         #calculate-btn {
             display: block;
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             margin: 20px 0;
             background-color: #2196F3;
             color: white;
@@ -98,7 +130,7 @@
             margin-top: 10px;
         }
         .result-table th, .result-table td {
-            padding: 8px;
+            padding: 10px;
             text-align: center;
             border: 1px solid #ddd;
         }
@@ -124,17 +156,21 @@
             <div class="input-group">
                 <div class="input-label">答对数量:</div>
                 <div class="input-control">
-                    <button class="decrease" data-section="language" data-type="correct">-</button>
+                    <button class="decrease large-btn" data-section="language" data-type="correct" data-step="10">-10</button>
+                    <button class="decrease small-btn" data-section="language" data-type="correct">-</button>
                     <input type="number" class="correct" data-section="language" min="0" max="44" value="0">
-                    <button class="increase" data-section="language" data-type="correct">+</button>
+                    <button class="increase small-btn" data-section="language" data-type="correct">+</button>
+                    <button class="increase large-btn" data-section="language" data-type="correct" data-step="10">+10</button>
                 </div>
             </div>
             <div class="input-group">
                 <div class="input-label">题目总数:</div>
                 <div class="input-control">
-                    <button class="decrease" data-section="language" data-type="total">-</button>
+                    <button class="decrease large-btn" data-section="language" data-type="total" data-step="10">-10</button>
+                    <button class="decrease small-btn" data-section="language" data-type="total">-</button>
                     <input type="number" class="total" data-section="language" min="1" value="44">
-                    <button class="increase" data-section="language" data-type="total">+</button>
+                    <button class="increase small-btn" data-section="language" data-type="total">+</button>
+                    <button class="increase large-btn" data-section="language" data-type="total" data-step="10">+10</button>
                 </div>
             </div>
         </div>
@@ -144,17 +180,21 @@
             <div class="input-group">
                 <div class="input-label">答对数量:</div>
                 <div class="input-control">
-                    <button class="decrease" data-section="reading" data-type="correct">-</button>
+                    <button class="decrease large-btn" data-section="reading" data-type="correct" data-step="10">-10</button>
+                    <button class="decrease small-btn" data-section="reading" data-type="correct">-</button>
                     <input type="number" class="correct" data-section="reading" min="0" max="22" value="0">
-                    <button class="increase" data-section="reading" data-type="correct">+</button>
+                    <button class="increase small-btn" data-section="reading" data-type="correct">+</button>
+                    <button class="increase large-btn" data-section="reading" data-type="correct" data-step="10">+10</button>
                 </div>
             </div>
             <div class="input-group">
                 <div class="input-label">题目总数:</div>
                 <div class="input-control">
-                    <button class="decrease" data-section="reading" data-type="total">-</button>
+                    <button class="decrease large-btn" data-section="reading" data-type="total" data-step="10">-10</button>
+                    <button class="decrease small-btn" data-section="reading" data-type="total">-</button>
                     <input type="number" class="total" data-section="reading" min="1" value="22">
-                    <button class="increase" data-section="reading" data-type="total">+</button>
+                    <button class="increase small-btn" data-section="reading" data-type="total">+</button>
+                    <button class="increase large-btn" data-section="reading" data-type="total" data-step="10">+10</button>
                 </div>
             </div>
         </div>
@@ -164,17 +204,21 @@
             <div class="input-group">
                 <div class="input-label">答对数量:</div>
                 <div class="input-control">
-                    <button class="decrease" data-section="listening" data-type="correct">-</button>
+                    <button class="decrease large-btn" data-section="listening" data-type="correct" data-step="10">-10</button>
+                    <button class="decrease small-btn" data-section="listening" data-type="correct">-</button>
                     <input type="number" class="correct" data-section="listening" min="0" max="30" value="0">
-                    <button class="increase" data-section="listening" data-type="correct">+</button>
+                    <button class="increase small-btn" data-section="listening" data-type="correct">+</button>
+                    <button class="increase large-btn" data-section="listening" data-type="correct" data-step="10">+10</button>
                 </div>
             </div>
             <div class="input-group">
                 <div class="input-label">题目总数:</div>
                 <div class="input-control">
-                    <button class="decrease" data-section="listening" data-type="total">-</button>
+                    <button class="decrease large-btn" data-section="listening" data-type="total" data-step="10">-10</button>
+                    <button class="decrease small-btn" data-section="listening" data-type="total">-</button>
                     <input type="number" class="total" data-section="listening" min="1" value="30">
-                    <button class="increase" data-section="listening" data-type="total">+</button>
+                    <button class="increase small-btn" data-section="listening" data-type="total">+</button>
+                    <button class="increase large-btn" data-section="listening" data-type="total" data-step="10">+10</button>
                 </div>
             </div>
         </div>
@@ -232,39 +276,26 @@
                 correctInput.max = defaultTotals[section];
             });
             
-            // 增加按钮事件
-            document.querySelectorAll('.increase').forEach(button => {
+            // 按钮事件处理
+            document.querySelectorAll('button.decrease, button.increase').forEach(button => {
                 button.addEventListener('click', function() {
                     const section = this.dataset.section;
                     const type = this.dataset.type;
-                    const input = this.parentElement.querySelector(`.${type}`);
-                    
-                    let value = parseInt(input.value) || 0;
-                    const max = type === 'correct' ? input.max : Infinity;
-                    
-                    if (value < max) {
-                        value++;
-                        input.value = value;
-                        updateButtonStates(input);
-                    }
-                });
-            });
-            
-            // 减少按钮事件
-            document.querySelectorAll('.decrease').forEach(button => {
-                button.addEventListener('click', function() {
-                    const section = this.dataset.section;
-                    const type = this.dataset.type;
-                    const input = this.parentElement.querySelector(`.${type}`);
+                    const input = this.closest('.input-control').querySelector(`.${type}`);
+                    const step = parseInt(this.dataset.step) || 1;
                     
                     let value = parseInt(input.value) || 0;
                     const min = parseInt(input.min) || 0;
+                    const max = type === 'correct' ? input.max : Infinity;
                     
-                    if (value > min) {
-                        value--;
-                        input.value = value;
-                        updateButtonStates(input);
+                    if (this.classList.contains('decrease')) {
+                        value = Math.max(min, value - step);
+                    } else {
+                        value = Math.min(max, value + step);
                     }
+                    
+                    input.value = value;
+                    updateButtonStates(input);
                 });
             });
             
@@ -299,20 +330,18 @@
             function updateButtonStates(input) {
                 const value = parseInt(input.value) || 0;
                 const min = parseInt(input.min) || 0;
-                const parent = input.parentElement;
-                const decreaseBtn = parent.querySelector('.decrease');
-                const increaseBtn = parent.querySelector('.increase');
+                const max = input.classList.contains('correct') ? parseInt(input.max) : Infinity;
+                const control = input.closest('.input-control');
                 
                 // 更新减少按钮状态
-                decreaseBtn.disabled = value <= min;
+                control.querySelectorAll('.decrease').forEach(btn => {
+                    btn.disabled = value <= min;
+                });
                 
                 // 更新增加按钮状态
-                if (input.classList.contains('correct')) {
-                    const max = parseInt(input.max);
-                    increaseBtn.disabled = value >= max;
-                } else {
-                    increaseBtn.disabled = false;
-                }
+                control.querySelectorAll('.increase').forEach(btn => {
+                    btn.disabled = value >= max;
+                });
             }
             
             // 初始按钮状态
