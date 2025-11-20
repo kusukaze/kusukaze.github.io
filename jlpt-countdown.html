@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            background-color: white;
+            /* Ensure the iframe has a white background */
+        }
+
+
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .exam-container {
+            margin: 0 auto 30px;
+            max-width: 600px;
+            text-align: left;
+        }
+
+        .exam-date {
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .exam-info {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .past {
+            color: #888;
+        }
+
+        .future-0 {
+            color: #e74c3c;
+        }
+
+        .future-1 {
+            color: #3498db;
+        }
+
+        .future-2 {
+            color: #2ecc71;
+        }
+
+        .future-3 {
+            color: #9b59b6;
+        }
+
+        .future-4 {
+            color: #e67e22;
+        }
+
+        .future-5 {
+            color: #1abc9c;
+        }
+
+        hr {
+            width: 50%;
+            margin: 20px auto;
+            border: 0;
+            height: 1px;
+            background-color: #eee;
+        }
+
+        .highlight {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .today {
+            color: #e74c3c;
+            font-weight: bold;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!DOCTYPE html>
+    <html lang="zh">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>JLPT考试日期</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+                line-height: 1.6;
+                text-align: center;
+            }
+
+            h1 {
+                color: #333;
+                margin-bottom: 30px;
+            }
+
+            .exam-container {
+                margin: 0 auto 30px;
+                max-width: 600px;
+                text-align: left;
+            }
+
+            .exam-date {
+                font-weight: bold;
+                margin-bottom: 5px;
+                text-align: center;
+            }
+
+            .exam-info {
+                text-align: center;
+                margin-bottom: 15px;
+            }
+
+            .past {
+                color: #888;
+            }
+
+            .future-0 {
+                color: #e74c3c;
+            }
+
+            .future-1 {
+                color: #3498db;
+            }
+
+            .future-2 {
+                color: #2ecc71;
+            }
+
+            .future-3 {
+                color: #9b59b6;
+            }
+
+            .future-4 {
+                color: #e67e22;
+            }
+
+            .future-5 {
+                color: #1abc9c;
+            }
+
+            hr {
+                width: 50%;
+                margin: 20px auto;
+                border: 0;
+                height: 1px;
+                background-color: #eee;
+            }
+
+            .highlight {
+                font-size: 1.2em;
+                font-weight: bold;
+            }
+
+            .today {
+                color: #e74c3c;
+                font-weight: bold;
+                animation: blink 1s infinite;
+            }
+
+            @keyframes blink {
+                0% {
+                    opacity: 1;
+                }
+
+                50% {
+                    opacity: 0.7;
+                }
+
+                100% {
+                    opacity: 1;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <h1>JLPT考试日程</h1>
+
+        <div class="exam-container">
+            <div id="exam-dates"></div>
+        </div>
+
+        <script>
+            // 可修改的常量 - 想要显示的未来考试次数
+            const FUTURE_EXAMS_COUNT = 5;
+
+            // 获取当前日期
+            function getToday() {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return today;
+            }
+
+            // 计算最近的JLPT考试日期
+            function calculateJLPTCdates(today) {
+                const currentYear = today.getFullYear();
+                const currentMonth = today.getMonth() + 1;
+
+                let pastExam = null;
+                let futureExams = [];
+
+                for (let year = currentYear - 3; year <= currentYear + 3; year++) {
+                    const julyExam = getFirstSunday(year, 7);
+                    const decemberExam = getFirstSunday(year, 12);
+
+                    if (julyExam < today) {
+                        if (!pastExam || julyExam > pastExam) {
+                            pastExam = julyExam;
+                        }
+                    } else {
+                        if (futureExams.length < FUTURE_EXAMS_COUNT + 3) {
+                            futureExams.push(julyExam);
+                        }
+                    }
+
+                    if (decemberExam < today) {
+                        if (!pastExam || decemberExam > pastExam) {
+                            pastExam = decemberExam;
+                        }
+                    } else {
+                        if (futureExams.length < FUTURE_EXAMS_COUNT + 3) {
+                            futureExams.push(decemberExam);
+                        }
+                    }
+                }
+
+                futureExams.sort((a, b) => a - b);
+                futureExams = futureExams.slice(0, FUTURE_EXAMS_COUNT);
+
+                return { pastExam, futureExams };
+            }
+
+            // 获取某年某月的第一个周日
+            function getFirstSunday(year, month) {
+                const date = new Date(year, month - 1, 1);
+                while (date.getDay() !== 0) {
+                    date.setDate(date.getDate() + 1);
+                }
+                date.setHours(0, 0, 0, 0);
+                return date;
+            }
+
+            // 计算两个日期之间的天数差
+            function getDaysDiff(date1, date2) {
+                const diffTime = Math.abs(date2 - date1);
+                return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            }
+
+            // 格式化日期为YYYY年MM月DD日，数字部分加粗加大
+            function formatDate(date) {
+                const year = date.getFullYear();
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                return `${year}<span class="highlight">年</span>${month}<span class="highlight">月</span>${day}<span class="highlight">日</span>`;
+            }
+
+            // 渲染考试日期
+            function renderExamDates() {
+                const today = getToday();
+                const { pastExam, futureExams } = calculateJLPTCdates(today);
+                const container = document.getElementById('exam-dates');
+
+                container.innerHTML = '';
+
+                // 显示上一次考试
+                if (pastExam) {
+                    const daysDiff = getDaysDiff(pastExam, today);
+                    const examElement = document.createElement('div');
+                    examElement.className = 'past';
+
+                    let daysInfo;
+                    if (daysDiff === 0) {
+                        daysInfo = '<span class="today">今天考试</span>';
+                    } else {
+                        daysInfo = `距今: <span class="highlight">${daysDiff}</span>天前`;
+                    }
+
+                    examElement.innerHTML = `
+                    <div class="exam-date">【上一次考试】 ${formatDate(pastExam)}</div>
+                    <div class="exam-info">${daysInfo}</div>
+                `;
+                    container.appendChild(examElement);
+                    container.appendChild(document.createElement('hr'));
+                }
+
+                // 显示未来考试
+                futureExams.forEach((exam, index) => {
+                    const daysDiff = getDaysDiff(today, exam);
+                    const examElement = document.createElement('div');
+                    examElement.className = `future-${index}`;
+
+                    let daysInfo;
+                    if (daysDiff === 0) {
+                        daysInfo = '<span class="today">今天考试</span>';
+                    } else {
+                        daysInfo = `距今天还有: <span class="highlight">${daysDiff}</span>天`;
+                    }
+
+                    examElement.innerHTML = `
+                    <div class="exam-date">【下一次考试${index + 1}】 ${formatDate(exam)}</div>
+                    <div class="exam-info">${daysInfo}</div>
+                `;
+                    container.appendChild(examElement);
+
+                    if (index < futureExams.length - 1) {
+                        container.appendChild(document.createElement('hr'));
+                    }
+                });
+            }
+
+            // 页面加载时渲染
+            window.onload = function () {
+                renderExamDates();
+                // 每1秒更新一次
+                setInterval(renderExamDates, 1000);
+            };
+        </script>
+    </body>
+
+    </html>
+
+    <script>
+        // 获取当前日期
+        function getToday() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return today;
+        }
+
+        // 计算最近的JLPT考试日期
+        function calculateJLPTCdates(today) {
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth() + 1;
+
+            let pastExam = null;
+            let futureExams = [];
+
+            for (let year = currentYear - 3; year <= currentYear + 3; year++) {
+                const julyExam = getFirstSunday(year, 7);
+                const decemberExam = getFirstSunday(year, 12);
+
+                if (julyExam < today) {
+                    if (!pastExam || julyExam > pastExam) {
+                        pastExam = julyExam;
+                    }
+                } else {
+                    if (futureExams.length < FUTURE_EXAMS_COUNT + 3) {
+                        futureExams.push(julyExam);
+                    }
+                }
+
+                if (decemberExam < today) {
+                    if (!pastExam || decemberExam > pastExam) {
+                        pastExam = decemberExam;
+                    }
+                } else {
+                    if (futureExams.length < FUTURE_EXAMS_COUNT + 3) {
+                        futureExams.push(decemberExam);
+                    }
+                }
+            }
+
+            futureExams.sort((a, b) => a - b);
+            futureExams = futureExams.slice(0, FUTURE_EXAMS_COUNT);
+
+            return { pastExam, futureExams };
+        }
+
+        // 获取某年某月的第一个周日
+        function getFirstSunday(year, month) {
+            const date = new Date(year, month - 1, 1);
+            while (date.getDay() !== 0) {
+                date.setDate(date.getDate() + 1);
+            }
+            date.setHours(0, 0, 0, 0);
+            return date;
+        }
+
+        // 计算两个日期之间的天数差
+        function getDaysDiff(date1, date2) {
+            const diffTime = Math.abs(date2 - date1);
+            return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        // 格式化日期为YYYY年MM月DD日，数字部分加粗加大
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            return `<span class="highlight">${year}</span> 年 <span class="highlight">${month}</span> 月 <span class="highlight">${day}</span> 日 `;
+        }
+
+        // 渲染考试日期
+        function renderExamDates() {
+            const today = getToday();
+            const { pastExam, futureExams } = calculateJLPTCdates(today);
+            const container = document.getElementById('exam-dates');
+
+            container.innerHTML = '';
+
+            // 显示上一次考试
+            if (pastExam) {
+                const daysDiff = getDaysDiff(pastExam, today);
+                const examElement = document.createElement('div');
+                examElement.className = 'past';
+
+                let daysInfo;
+                if (daysDiff === 0) {
+                    daysInfo = '<span class="today">今天考试</span>';
+                } else {
+                    daysInfo = `距今 <span class="highlight">${daysDiff}</span> 天前`;
+                }
+
+                examElement.innerHTML = `
+                    <div class="exam-date">【上一次考试】 ${formatDate(pastExam)}</div>
+                    <div class="exam-info">${daysInfo}</div>
+                `;
+                container.appendChild(examElement);
+                container.appendChild(document.createElement('hr'));
+            }
+
+            // 显示未来考试
+            futureExams.forEach((exam, index) => {
+                const daysDiff = getDaysDiff(today, exam);
+                const examElement = document.createElement('div');
+                examElement.className = `future-${index}`;
+
+                let daysInfo;
+                if (daysDiff === 0) {
+                    daysInfo = '<span class="today">今天考试</span>';
+                } else {
+                    daysInfo = `距今天还有 <span class="highlight">${daysDiff}</span> 天`;
+                }
+
+                examElement.innerHTML = `
+                    <div class="exam-date">【未来第 ${index + 1} 次考试】 ${formatDate(exam)}</div>
+                    <div class="exam-info">${daysInfo}</div>
+                `;
+                container.appendChild(examElement);
+
+                if (index < futureExams.length - 1) {
+                    container.appendChild(document.createElement('hr'));
+                }
+            });
+        }
+
+        // 页面加载时渲染
+        window.onload = function () {
+            renderExamDates();
+            // 每1秒更新一次
+            setInterval(renderExamDates, 1000);
+        };
+
+
+    </script>
+</body>
+
+</html>
