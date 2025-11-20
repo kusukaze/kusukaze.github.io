@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>日语学习天数</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f8f9fa;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+
+        .date-info {
+            font-size: 1.2em;
+            margin-bottom: 25px;
+            color: #7f8c8d;
+        }
+
+        .result-container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin: 25px 0;
+        }
+
+        .result-title {
+            font-size: 1.3em;
+            color: #333333;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .result-value {
+            font-size: 2.8em;
+            font-weight: bold;
+            color: #ff99ff;
+            margin: 15px 0;
+        }
+
+        .result-detail {
+            font-size: 1.8em;
+            color: #2c3e50;
+            margin-top: 20px;
+            line-height: 1.5;
+        }
+
+        .number {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #66ccff;
+        }
+
+        .text {
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>学习天数</h1>
+
+    <div class="date-info">
+        从 2018年2月9日 开始
+    </div>
+
+    <div class="result-container">
+        <div class="result-title">总天数</div>
+        <div class="result-value" id="total-days">0</div>
+    </div>
+
+    <div class="result-container">
+        <div class="result-title">按年月日</div>
+        <div class="result-detail" id="detailed-time">
+            <span class="number">0</span><span class="text"> 年 </span>
+            <span class="number">0</span><span class="text"> 个月 </span>
+            <span class="number">0</span><span class="text"> 天</span>
+        </div>
+    </div>
+
+    <script>
+        // 固定日期设置为2018年2月9日
+        const fixedDate = new Date(2018, 1, 9);
+
+        // 添加千位分隔符函数
+        function addCommas(number) {
+            return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        function calculateDateDifference() {
+            const currentDate = new Date();
+
+            // 计算总天数差
+            const timeDiff = currentDate - fixedDate;
+            const totalDays = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+            // 计算年、月、日差
+            let years = currentDate.getFullYear() - fixedDate.getFullYear();
+            let months = currentDate.getMonth() - fixedDate.getMonth();
+            let days = currentDate.getDate() - fixedDate.getDate();
+
+            // 调整负数的月或日
+            if (days < 0) {
+                months--;
+                // 获取上个月的天数
+                const lastDayOfMonth = new Date(
+                    currentDate.getFullYear(),
+                    currentDate.getMonth(),
+                    0
+                ).getDate();
+                days += lastDayOfMonth;
+            }
+
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+
+            // 确保天数不为负
+            if (days < 0) {
+                months--;
+                days += new Date(
+                    currentDate.getFullYear(),
+                    currentDate.getMonth() - 1,
+                    0
+                ).getDate();
+            }
+
+            // 更新显示
+            document.getElementById('total-days').textContent = addCommas(totalDays);
+
+            // 分别设置数字和文字的样式
+            const detailedTime = document.getElementById('detailed-time');
+            detailedTime.innerHTML = `
+                <span class="number">${years}</span><span class="text"> 年 </span>
+                <span class="number">${months}</span><span class="text"> 个月 </span>
+                <span class="number">${days}</span><span class="text"> 天</span>
+            `;
+        }
+
+        // 初始计算
+        calculateDateDifference();
+
+        // 每天自动更新（实际使用中可能不需要，因为页面会刷新）
+        setInterval(calculateDateDifference, 1000); // 每秒检查一次
+    </script>
+</body>
+
+</html>
