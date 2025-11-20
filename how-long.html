@@ -1,8 +1,7 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<!-- saved from url=(0035)https://kusukaze.github.io/how-long -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
-<head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>备考时间计算器</title>
     <style>
@@ -100,67 +99,67 @@
 </head>
 
 <body>
-    <h1>备考时间计算器</h1>
+<h1>备考时间计算器</h1>
 
-    <div class="calculator">
-        <div class="form-group">
-            <label for="current-level">当前水平</label>
-            <select id="current-level">
-                <option value="0">零基础</option>
-                <option value="1.5">N5</option>
-                <option value="3">N4</option>
-                <option value="6">N3</option>
-                <option value="12">N2</option>
-                <option value="24">N1</option>
-                <option value="48">CATTI 3</option>
-                <option value="84">CATTI 2</option>
-                <option value="120">CATTI 1</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="target-level">目标水平</label>
-            <select id="target-level">
-                <option value="1.5">N5</option>
-                <option value="3">N4</option>
-                <option value="6">N3</option>
-                <option value="12" selected>N2</option>
-                <option value="24">N1</option>
-                <option value="48">CATTI 3</option>
-                <option value="84">CATTI 2</option>
-                <option value="120">CATTI 1</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="study-hours">每日学习时长</label>
-            <select id="study-hours">
-                <option value="0.5">0.5小时</option>
-                <option value="1">1小时</option>
-                <option value="1.5">1.5小时</option>
-                <option value="2">2小时</option>
-                <option value="2.5">2.5小时</option>
-                <option value="3" selected>3小时</option>
-                <option value="4">4小时</option>
-                <option value="5">5小时</option>
-                <option value="6">6小时</option>
-                <option value="7">7小时</option>
-                <option value="8">8小时</option>
-                <option value="9">9小时</option>
-                <option value="10">10小时</option>
-                <option value="11">11小时</option>
-                <option value="12">12小时</option>
-            </select>
-            <div class="note">* 默认备考时长为每日3小时；实际备考时长因人而异，仅供参考</div>
-        </div>
-
-        <button id="calculate-btn">计算备考时间</button>
-        <div id="easter-egg-notice">彩蛋已解锁！现在可以选择更多学习时长选项</div>
-
-        <div id="result"></div>
+<div class="calculator">
+    <div class="form-group">
+        <label for="current-level">当前水平</label>
+        <select id="current-level">
+            <option value="0">零基础</option>
+            <option value="1.5">N5</option>
+            <option value="3">N4</option>
+            <option value="6">N3</option>
+            <option value="12">N2</option>
+            <option value="24">N1</option>
+            <option value="48">CATTI 3</option>
+            <option value="84">CATTI 2</option>
+            <option value="120">CATTI 1</option>
+        </select>
     </div>
 
-    <script>
+    <div class="form-group">
+        <label for="target-level">目标水平</label>
+        <select id="target-level">
+            <option value="1.5">N5</option>
+            <option value="3">N4</option>
+            <option value="6">N3</option>
+            <option value="12" selected="">N2</option>
+            <option value="24">N1</option>
+            <option value="48">CATTI 3</option>
+            <option value="84">CATTI 2</option>
+            <option value="120">CATTI 1</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="study-hours">每日学习时长</label>
+        <select id="study-hours">
+            <option value="0.5">0.5小时</option>
+            <option value="1">1小时</option>
+            <option value="1.5">1.5小时</option>
+            <option value="2">2小时</option>
+            <option value="2.5">2.5小时</option>
+            <option value="3" selected="">3小时</option>
+            <option value="4">4小时</option>
+            <option value="5">5小时</option>
+            <option value="6">6小时</option>
+            <option value="7">7小时</option>
+            <option value="8">8小时</option>
+            <option value="9">9小时</option>
+            <option value="10">10小时</option>
+            <option value="11">11小时</option>
+            <option value="12">12小时</option>
+        </select>
+        <div class="note">* 默认备考时长为每日3小时；实际备考时长因人而异，仅供参考</div>
+    </div>
+
+    <button id="calculate-btn">计算备考时间</button>
+    <div id="easter-egg-notice">彩蛋已解锁！现在可以选择更多学习时长选项</div>
+
+    <div id="result"></div>
+</div>
+
+<script>
         var hardcoreMode = 0;
         // Konami代码检测
         const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
@@ -208,7 +207,10 @@
 
             // 确定滑动方向
             let direction = '';
-            if (Math.abs(dx) > Math.abs(dy)) {
+            if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+                direction = '';
+            }
+            else if (Math.abs(dx) > Math.abs(dy)) {
                 // 水平滑动
                 direction = dx > 0 ? 'right' : 'left';
             } else {
@@ -251,11 +253,14 @@
 
             // 确定拖动方向
             let direction = '';
-            if (Math.abs(dx) > Math.abs(dy)) {
-                // 水平拖动
+            if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+                direction = '';
+            }
+            else if (Math.abs(dx) > Math.abs(dy)) {
+                // 水平滑动
                 direction = dx > 0 ? 'right' : 'left';
             } else {
-                // 垂直拖动
+                // 垂直滑动
                 direction = dy > 0 ? 'down' : 'up';
             }
 
@@ -344,6 +349,7 @@
             resultElement.style.display = 'block';
         });
     </script>
-</body>
 
-</html>
+
+
+</body></html>
