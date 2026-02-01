@@ -421,13 +421,18 @@
         function otherExamToLevelPoints(examType, score) {
             if (examType === 'JTEST') {
                 const result = jtestConversion.scoreToPoints(score);
+                let interval = 1000;
+                if (score > 900) interval = 1000 / 3;
                 return Array.isArray(result)
-                    ? Math.round(result[0] + (score - result[1]) / (result[2] - result[1]) * 1000)
+                    ? Math.round(result[0] + (score - result[1]) / (result[2] - result[1]) * interval)
                     : result;
             }
 
             if (examType === 'EJU') {
                 if (score < 200) return null;
+                if (score > 360 && score <= 372) {
+                    return Math.round(6000 + (score - 360) / 12 * 200);
+                }
                 const equivalentJtest = Math.min(score / 0.4, 930);
                 const result = jtestConversion.scoreToPoints(equivalentJtest);
                 return Array.isArray(result)
@@ -450,6 +455,12 @@
             if (examType === 'EJU') {
                 const result = jtestConversion.pointsToScore(levelPoints);
                 if (result === null) return null;
+                if (levelPoints > 6000 && levelPoints <= 6200) {
+                    return Math.round(360 + (levelPoints - 6000) / 200 * 12);
+                }
+                if (levelPoints > 6200) {
+                    return 372;
+                }
                 const equivalentJtest = Array.isArray(result)
                     ? result[0] + (levelPoints - result[1]) / (result[2] - result[1]) * (result[3] - result[0])
                     : result;
@@ -457,6 +468,22 @@
             }
 
             return null;
+        }
+
+        // 等级积分转学习时长
+        function levelPointsToLearnTime(levelPoints) {
+            let result;
+            if (levelPoints <= 5000) {
+                result = 3 * Math.pow(2, levelPoints / 1000 - 2);
+            }
+            else if (levelPoints <= 6500) {
+                result = 24 * Math.pow(2, (levelPoints - 5000) / 1500);
+            }
+            else {
+                return null;
+            }
+
+            return result.toFixed(2);
         }
 
         // 初始化页面
@@ -554,12 +581,15 @@
                     allResults[otherType] = levelPointsToOtherExam(otherType, levelPoints);
                 }
 
+                // 计算学习时长
+                const learnTime = levelPointsToLearnTime(levelPoints);
+
                 // 显示结果
-                displayResults(rankingPoints, rankingInfo, officialCEFR, customCEFR, levelPoints, allResults);
+                displayResults(rankingPoints, rankingInfo, officialCEFR, customCEFR, levelPoints, learnTime, allResults);
             });
 
             // 显示换算结果
-            function displayResults(rankingPoints, rankingInfo, officialCEFR, customCEFR, levelPoints, allResults) {
+            function displayResults(rankingPoints, rankingInfo, officialCEFR, customCEFR, levelPoints, learnTime, allResults) {
                 let html = `
                     <div class="section-title">排名积分</div>
                     <div class="result-item">
@@ -590,6 +620,10 @@
                     <div class="result-item">
                         <span>等级积分</span>
                         <span class="level-points">${levelPoints}</span>
+                    </div>
+                    <div class="result-item">
+                        <span>学习时长（月）</span>
+                        <span class="ranking-info">${learnTime}</span>
                     </div>
                     
                     <div class="section-title">对应考试分数</div>
