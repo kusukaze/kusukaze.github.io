@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三参数 IRT：最概然分值估算</title>
+    <!-- 引入 Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 1000px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .stats-bar {
+            text-align: center;
+            background: #e8f4fd;
+            color: #0056b3;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: 1px solid #b6e1fc;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 500px;
+            width: 100%;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.5); 
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto; 
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 700px;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: black;
+        }
+
+        .config-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .config-table-wrapper {
+            overflow-y: auto;
+            max-height: 400px;
+            border: 1px solid #eee;
+        }
+
+        .config-table th, .config-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .config-table th {
+            background-color: #f2f2f2;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .config-table input {
+            width: 60px;
+            padding: 4px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        .btn-reset {
+            background-color: #6c757d;
+        }
+        .btn-reset:hover {
+            background-color: #545b62;
+        }
+
+        /* 开关样式 (Toggle Switch) */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #dc3545; /* 默认红色 (错) */
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #28a745; /* 选中绿色 (对) */
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #28a745;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .switch-label {
+            display: block;
+            font-size: 12px;
+            margin-top: 4px;
+            font-weight: bold;
+        }
+        
+        /* 只显示“答对”，答错时不显示文字 */
+        .switch-label.on { 
+            color: #28a745; 
+            display: none; 
+        }
+        /* 答错时的标签已删除，不再需要 .off 类 */
+        
+        input:checked ~ .switch-label.on { 
+            display: block; 
+        }
+        
+        .switch-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>三参数 IRT：最概然分值估算</h2>
+    
+    <div class="stats-bar" id="maxProbStats">
+        正在计算...
+    </div>
+
+    <div class="controls">
+        <button id="openConfigBtn">⚙️ 配置题目参数 & 作答</button>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="irtChart"></canvas>
+    </div>
+    <div style="text-align: center; margin-top: 10px; color: #555;">
+        <p><strong>图表说明：</strong> 曲线表示在不同分值下，完全匹配当前设定“对错模式”的概率。<br>
+        <span style="color:red; font-weight:bold;">●</span> 红点标记了概率最大的最概然分值点。</p>
+    </div>
+</div>
+
+<!-- 配置模态框 -->
+<div id="configModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>题目参数配置 (共10题)</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="config-table-wrapper">
+            <table class="config-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">题号</th>
+                        <th>区分度 (a)</th>
+                        <th>难度 (b)</th>
+                        <th>猜测度 (c)</th>
+                        <th>作答结果</th>
+                    </tr>
+                </thead>
+                <tbody id="configBody">
+                    <!-- 动态生成 -->
+                </tbody>
+            </table>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-reset" id="resetDefaultsBtn">重置为随机默认值</button>
+            <button id="saveConfigBtn">保存并应用</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 数据状态 ---
+    const NUM_ITEMS = 10;
+    let items = [];
+    let chartInstance = null;
+
+    // 映射常量
+    const SCALE_FACTOR = 15;
+    const OFFSET = 30;
+    // 分数范围固定 0 ~ 70
+    const MIN_SCORE = 0;
+    const MAX_SCORE = 70;
+    
+    // 反算 Theta 范围 (用于内部计算，虽然绘图只取 0-70 对应的段)
+    const MIN_THETA = (MIN_SCORE - OFFSET) / SCALE_FACTOR; 
+    const MAX_THETA = (MAX_SCORE - OFFSET) / SCALE_FACTOR; 
+
+    // --- 初始化数据 ---
+    function initItems() {
+        items = [];
+        for (let i = 0; i < NUM_ITEMS; i++) {
+            items.push({
+                id: i + 1,
+                a: parseFloat((Math.random() * 1.5 + 0.8).toFixed(2)),   
+                b: parseFloat((Math.random() * 4 - 2).toFixed(2)),       
+                c: parseFloat((Math.random() * 0.25).toFixed(2)),        
+                observed: Math.random() > 0.3 ? 1 : 0 
+            });
+        }
+    }
+
+    // --- 核心数学模型：3PL ---
+    function calcP(theta, a, b, c) {
+        const exponent = -a * (theta - b);
+        const safeExponent = Math.max(-700, Math.min(700, exponent));
+        return c + (1 - c) / (1 + Math.exp(safeExponent));
+    }
+
+    // --- 计算联合概率 ---
+    function calcLikelihood(theta) {
+        let likelihood = 1.0;
+        for (let item of items) {
+            const p = calcP(theta, item.a, item.b, item.c);
+            if (item.observed === 1) {
+                likelihood *= p;
+            } else {
+                likelihood *= (1 - p);
+            }
+        }
+        return likelihood;
+    }
+
+    // --- 分数与Theta转换 ---
+    function thetaToScore(theta) {
+        return theta * SCALE_FACTOR + OFFSET;
+    }
+
+    // --- 绘图逻辑 ---
+    function drawChart() {
+        const ctx = document.getElementById('irtChart').getContext('2d');
+        
+        // 生成固定范围的序列 (0~70分)
+        const scoreValues = [];
+        const likelihoodValues = [];
+        
+        // 步长设为 0.5 以保证曲线平滑，同时能较精确捕捉峰值
+        const step = 0.5; 
+        
+        let maxProb = -1;
+        let maxScore = 0;
+
+        for (let s = MIN_SCORE; s <= MAX_SCORE; s += step) {
+            const score = parseFloat(s.toFixed(2));
+            const theta = (score - OFFSET) / SCALE_FACTOR;
+            
+            const prob = calcLikelihood(theta);
+            
+            scoreValues.push(score);
+            likelihoodValues.push(prob);
+
+            // 寻找最大值
+            if (prob > maxProb) {
+                maxProb = prob;
+                maxScore = score;
+            }
+        }
+        
+        // 为了更精确，可以在 maxScore 附近再细化搜索一次，或者直接用当前步长的最大值
+        // 这里直接使用循环中找到的最大值，对于演示足够精确
+
+        // 更新顶部统计信息
+        const statsDiv = document.getElementById('maxProbStats');
+        if (maxProb > 0) {
+            statsDiv.innerHTML = `最概然能力分值：<span style="font-size:1.4em; color:#d63384">${maxScore.toFixed(1)}</span> 分`;
+        } else {
+            statsDiv.innerHTML = "概率极低，无法估算";
+        }
+
+        // 自适应纵坐标
+        const suggestedMax = maxProb > 0 ? maxProb * 1.2 : 0.001;
+
+        // 准备数据集
+        const lineData = {
+            labels: scoreValues,
+            datasets: [{
+                label: '联合概率 L(Score)',
+                data: likelihoodValues,
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.15)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0
+            }]
+        };
+
+        // 添加红点数据集
+        const pointData = {
+            labels: scoreValues,
+            datasets: [{
+                label: '最概然点',
+                data: scoreValues.map(s => s === maxScore ? maxProb : null),
+                pointBackgroundColor: 'red',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 8,
+                pointHoverRadius: 10,
+                showLine: false,
+                type: 'scatter'
+            }]
+        };
+
+        // 合并数据集
+        const finalData = {
+            labels: lineData.labels,
+            datasets: [...lineData.datasets, ...pointData.datasets]
+        };
+
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: finalData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.datasetIndex === 1) {
+                                    return `最概然点: ${context.parsed.y.toExponential(4)}`;
+                                }
+                                return `概率: ${context.parsed.y.toExponential(4)}`;
+                            },
+                            title: function(context) {
+                                return `分值: ${context[0].label} 分`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: '考生分值 (能力 × 15 + 30)'
+                        },
+                        min: MIN_SCORE,
+                        max: MAX_SCORE,
+                        ticks: {
+                            stepSize: 5, // 强制刻度间隔为 5
+                            maxTicksLimit: 21
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: '联合概率 (乘积)'
+                        },
+                        beginAtZero: true,
+                        min: 0,
+                        max: suggestedMax,
+                        ticks: {
+                            callback: function(value) {
+                                if (value === 0) return 0;
+                                if (value < 0.001 || value > 1000) {
+                                    return value.toExponential(1);
+                                }
+                                return value.toFixed(4);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // --- UI 交互逻辑 ---
+    const openBtn = document.getElementById('openConfigBtn');
+    const closeSpan = document.getElementsByClassName('close')[0];
+    const saveBtn = document.getElementById('saveConfigBtn');
+    const resetBtn = document.getElementById('resetDefaultsBtn');
+    const configBody = document.getElementById('configBody');
+    const modal = document.getElementById('configModal');
+
+    openBtn.onclick = () => {
+        renderConfigTable();
+        modal.style.display = "block";
+    }
+
+    closeSpan.onclick = () => {
+        modal.style.display = "none";
+    }
+
+    window.onclick = (event) => {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+
+    // 渲染配置表格 (带开关)
+    function renderConfigTable() {
+        configBody.innerHTML = '';
+        items.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            
+            // 题号
+            const tdId = document.createElement('td');
+            tdId.textContent = item.id;
+            tr.appendChild(tdId);
+
+            // 输入框 a, b, c
+            ['a', 'b', 'c'].forEach(field => {
+                const td = document.createElement('td');
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.step = field === 'c' ? '0.01' : '0.1';
+                input.min = field === 'c' ? '0' : (field === 'a' ? '0.1' : '-5');
+                input.max = field === 'c' ? '1' : '5';
+                input.value = item[field];
+                input.dataset.index = index;
+                input.dataset.field = field;
+                td.appendChild(input);
+                tr.appendChild(td);
+            });
+
+            // 开关列
+            const tdSwitch = document.createElement('td');
+            const switchContainer = document.createElement('div');
+            switchContainer.className = 'switch-container';
+
+            const label = document.createElement('label');
+            label.className = 'switch';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = (item.observed === 1);
+            checkbox.dataset.index = index;
+            checkbox.dataset.field = 'observed';
+            
+            const slider = document.createElement('span');
+            slider.className = 'slider';
+
+            // 只保留“答对”标签
+            const labelOn = document.createElement('span');
+            labelOn.className = 'switch-label on';
+            labelOn.textContent = '答对';
+
+            label.appendChild(checkbox);
+            label.appendChild(slider);
+            
+            switchContainer.appendChild(label);
+            switchContainer.appendChild(labelOn);
+            // 删除了 labelOff
+            
+            tdSwitch.appendChild(switchContainer);
+            tr.appendChild(tdSwitch);
+
+            configBody.appendChild(tr);
+        });
+    }
+
+    // 保存配置
+    saveBtn.onclick = () => {
+        const inputs = configBody.querySelectorAll('input');
+        let valid = true;
+        let errorMsg = "";
+
+        inputs.forEach(input => {
+            const idx = parseInt(input.dataset.index);
+            const field = input.dataset.field;
+
+            if (field === 'observed') {
+                items[idx].observed = input.checked ? 1 : 0;
+            } else {
+                const numVal = parseFloat(input.value);
+                if (isNaN(numVal)) {
+                    valid = false;
+                    errorMsg = `题目 ${idx+1} 的 ${field} 参数无效`;
+                    return;
+                }
+                if (field === 'a' && numVal <= 0) {
+                    valid = false;
+                    errorMsg = `题目 ${idx+1} 的区分度 a 必须大于 0`;
+                    return;
+                }
+                if (field === 'c' && (numVal < 0 || numVal > 1)) {
+                    valid = false;
+                    errorMsg = `题目 ${idx+1} 的猜测度 c 必须在 0 到 1 之间`;
+                    return;
+                }
+                items[idx][field] = numVal;
+            }
+        });
+
+        if (!valid) {
+            alert(errorMsg);
+            return;
+        }
+
+        modal.style.display = "none";
+        drawChart();
+    };
+
+    // 重置默认值
+    resetBtn.onclick = () => {
+        initItems();
+        renderConfigTable();
+    };
+
+    // --- 启动 ---
+    initItems();
+    drawChart();
+
+</script>
+
+</body>
+</html>
