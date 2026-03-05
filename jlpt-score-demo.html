@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>三参数 IRT：最概然分值估算</title>
+    <title>三参数 IRT：最概然分值估算 (整数参数版)</title>
     <!-- 引入 Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -77,25 +77,25 @@
 
         /* 模态框样式 */
         .modal {
-            display: none; 
-            position: fixed; 
-            z-index: 1000; 
+            display: none;
+            position: fixed;
+            z-index: 1000;
             left: 0;
             top: 0;
-            width: 100%; 
-            height: 100%; 
-            overflow: auto; 
-            background-color: rgba(0,0,0,0.5); 
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
             backdrop-filter: blur(2px);
         }
 
         .modal-content {
             background-color: #fefefe;
-            margin: 5% auto; 
+            margin: 5% auto;
             padding: 20px;
             border: 1px solid #888;
             width: 90%;
-            max-width: 700px;
+            max-width: 750px;
             border-radius: 8px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.2);
             max-height: 80vh;
@@ -155,6 +155,28 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             text-align: center;
+            font-size: 14px;
+        }
+
+        /* 移除输入框默认的上下箭头在某些浏览器的样式，如果需要保留原生箭头则无需此段，
+           但为了统一体验，通常保留原生箭头即可，step=1 已满足需求 */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        /* 上面注释掉了移除箭头的代码，因为用户明确要求“点击增减按钮”，所以必须保留原生箭头 */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: auto;
+            margin: 0;
+        }
+
+        .param-hint {
+            font-size: 10px;
+            color: #666;
+            display: block;
+            margin-top: 2px;
         }
 
         .modal-footer {
@@ -180,7 +202,7 @@
             height: 24px;
         }
 
-        .switch input { 
+        .switch input {
             opacity: 0;
             width: 0;
             height: 0;
@@ -193,7 +215,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #dc3545; /* 默认红色 (错) */
+            background-color: #dc3545;
             transition: .4s;
             border-radius: 24px;
         }
@@ -211,7 +233,7 @@
         }
 
         input:checked + .slider {
-            background-color: #28a745; /* 选中绿色 (对) */
+            background-color: #28a745;
         }
 
         input:focus + .slider {
@@ -228,18 +250,16 @@
             margin-top: 4px;
             font-weight: bold;
         }
-        
-        /* 只显示“答对”，答错时不显示文字 */
-        .switch-label.on { 
-            color: #28a745; 
-            display: none; 
+
+        .switch-label.on {
+            color: #28a745;
+            display: none;
         }
-        /* 答错时的标签已删除，不再需要 .off 类 */
-        
-        input:checked ~ .switch-label.on { 
-            display: block; 
+
+        input:checked ~ .switch-label.on {
+            display: block;
         }
-        
+
         .switch-container {
             display: flex;
             flex-direction: column;
@@ -253,7 +273,7 @@
 
 <div class="container">
     <h2>三参数 IRT：最概然分值估算</h2>
-    
+
     <div class="stats-bar" id="maxProbStats">
         正在计算...
     </div>
@@ -267,7 +287,7 @@
     </div>
     <div style="text-align: center; margin-top: 10px; color: #555;">
         <p><strong>图表说明：</strong> 曲线表示在不同分值下，完全匹配当前设定“对错模式”的概率。<br>
-        <span style="color:red; font-weight:bold;">●</span> 红点标记了概率最大的最概然分值点。</p>
+            <span style="color:red; font-weight:bold;">●</span> 红点标记了概率最大的最概然分值点。</p>
     </div>
 </div>
 
@@ -281,16 +301,25 @@
         <div class="config-table-wrapper">
             <table class="config-table">
                 <thead>
-                    <tr>
-                        <th style="width: 50px;">题号</th>
-                        <th>区分度 (a)</th>
-                        <th>难度 (b)</th>
-                        <th>猜测度 (c)</th>
-                        <th>作答结果</th>
-                    </tr>
+                <tr>
+                    <th style="width: 50px;">题号</th>
+                    <th>
+                        区分度 (a)
+                        <span class="param-hint">整数，步长=1</span>
+                    </th>
+                    <th>
+                        难度 (b)
+                        <span class="param-hint">整数，步长=1 (0-70)</span>
+                    </th>
+                    <th>
+                        猜测度 (c)
+                        <span class="param-hint">0.00 - 1.00</span>
+                    </th>
+                    <th>作答结果</th>
+                </tr>
                 </thead>
                 <tbody id="configBody">
-                    <!-- 动态生成 -->
+                <!-- 动态生成 -->
                 </tbody>
             </table>
         </div>
@@ -313,10 +342,6 @@
     // 分数范围固定 0 ~ 70
     const MIN_SCORE = 0;
     const MAX_SCORE = 70;
-    
-    // 反算 Theta 范围 (用于内部计算，虽然绘图只取 0-70 对应的段)
-    const MIN_THETA = (MIN_SCORE - OFFSET) / SCALE_FACTOR; 
-    const MAX_THETA = (MAX_SCORE - OFFSET) / SCALE_FACTOR; 
 
     // --- 初始化数据 ---
     function initItems() {
@@ -324,15 +349,16 @@
         for (let i = 0; i < NUM_ITEMS; i++) {
             items.push({
                 id: i + 1,
-                a: parseFloat((Math.random() * 1.5 + 0.8).toFixed(2)),   
-                b: parseFloat((Math.random() * 4 - 2).toFixed(2)),       
-                c: parseFloat((Math.random() * 0.25).toFixed(2)),        
-                observed: Math.random() > 0.3 ? 1 : 0 
+                // 内部存储仍为 theta 维度 (浮点数)
+                a: parseFloat((Math.random() * 1 + 0.4).toFixed(2)),
+                b: parseFloat((Math.random() * 2.5 - 0.75).toFixed(2)),
+                c: parseFloat((Math.random() * 0.05 + 0.2).toFixed(2)),
+                observed: i % 4 === 0 ? 0 : 1//Math.random() > 0.3 ? 1 : 0
             });
         }
     }
 
-    // --- 核心数学模型：3PL ---
+    // --- 核心数学模型：3PL (使用 theta 维度计算) ---
     function calcP(theta, a, b, c) {
         const exponent = -a * (theta - b);
         const safeExponent = Math.max(-700, Math.min(700, exponent));
@@ -353,43 +379,32 @@
         return likelihood;
     }
 
-    // --- 分数与Theta转换 ---
-    function thetaToScore(theta) {
-        return theta * SCALE_FACTOR + OFFSET;
-    }
-
     // --- 绘图逻辑 ---
     function drawChart() {
         const ctx = document.getElementById('irtChart').getContext('2d');
-        
-        // 生成固定范围的序列 (0~70分)
+
         const scoreValues = [];
         const likelihoodValues = [];
-        
-        // 步长设为 0.5 以保证曲线平滑，同时能较精确捕捉峰值
-        const step = 0.5; 
-        
+        const step = 0.5;
+
         let maxProb = -1;
         let maxScore = 0;
 
         for (let s = MIN_SCORE; s <= MAX_SCORE; s += step) {
             const score = parseFloat(s.toFixed(2));
+            // 将分值转回 theta 进行计算
             const theta = (score - OFFSET) / SCALE_FACTOR;
-            
+
             const prob = calcLikelihood(theta);
-            
+
             scoreValues.push(score);
             likelihoodValues.push(prob);
 
-            // 寻找最大值
             if (prob > maxProb) {
                 maxProb = prob;
                 maxScore = score;
             }
         }
-        
-        // 为了更精确，可以在 maxScore 附近再细化搜索一次，或者直接用当前步长的最大值
-        // 这里直接使用循环中找到的最大值，对于演示足够精确
 
         // 更新顶部统计信息
         const statsDiv = document.getElementById('maxProbStats');
@@ -399,10 +414,8 @@
             statsDiv.innerHTML = "概率极低，无法估算";
         }
 
-        // 自适应纵坐标
         const suggestedMax = maxProb > 0 ? maxProb * 1.2 : 0.001;
 
-        // 准备数据集
         const lineData = {
             labels: scoreValues,
             datasets: [{
@@ -417,12 +430,11 @@
             }]
         };
 
-        // 添加红点数据集
         const pointData = {
             labels: scoreValues,
             datasets: [{
                 label: '最概然点',
-                data: scoreValues.map(s => s === maxScore ? maxProb : null),
+                data: scoreValues.map(s => Math.abs(s - maxScore) < 0.01 ? maxProb : null),
                 pointBackgroundColor: 'red',
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2,
@@ -433,7 +445,6 @@
             }]
         };
 
-        // 合并数据集
         const finalData = {
             labels: lineData.labels,
             datasets: [...lineData.datasets, ...pointData.datasets]
@@ -458,12 +469,12 @@
                         callbacks: {
                             label: function(context) {
                                 if (context.datasetIndex === 1) {
-                                    return `最概然点: ${context.parsed.y.toExponential(4)}`;
+                                    return `最概然点：${context.parsed.y.toExponential(4)}`;
                                 }
-                                return `概率: ${context.parsed.y.toExponential(4)}`;
+                                return `概率：${context.parsed.y.toExponential(4)}`;
                             },
                             title: function(context) {
-                                return `分值: ${context[0].label} 分`;
+                                return `分值：${context[0].label} 分`;
                             }
                         }
                     }
@@ -477,7 +488,7 @@
                         min: MIN_SCORE,
                         max: MAX_SCORE,
                         ticks: {
-                            stepSize: 5, // 强制刻度间隔为 5
+                            stepSize: 5,
                             maxTicksLimit: 21
                         }
                     },
@@ -527,61 +538,84 @@
         }
     }
 
-    // 渲染配置表格 (带开关)
+    // 渲染配置表格 (整数显示)
     function renderConfigTable() {
         configBody.innerHTML = '';
         items.forEach((item, index) => {
             const tr = document.createElement('tr');
-            
+
             // 题号
             const tdId = document.createElement('td');
             tdId.textContent = item.id;
             tr.appendChild(tdId);
 
-            // 输入框 a, b, c
-            ['a', 'b', 'c'].forEach(field => {
-                const td = document.createElement('td');
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.step = field === 'c' ? '0.01' : '0.1';
-                input.min = field === 'c' ? '0' : (field === 'a' ? '0.1' : '-5');
-                input.max = field === 'c' ? '1' : '5';
-                input.value = item[field];
-                input.dataset.index = index;
-                input.dataset.field = field;
-                td.appendChild(input);
-                tr.appendChild(td);
-            });
+            // 1. 区分度 (a) - 映射显示为整数
+            const tdA = document.createElement('td');
+            const inputA = document.createElement('input');
+            inputA.type = 'number';
+            inputA.step = '1'; // 步长为 1
+            inputA.min = '1';
+            // 显示值 = a * 15，并取整
+            inputA.value = Math.round(item.a * SCALE_FACTOR);
+            inputA.dataset.index = index;
+            inputA.dataset.field = 'a';
+            tdA.appendChild(inputA);
+            tr.appendChild(tdA);
 
-            // 开关列
+            // 2. 难度 (b) - 映射显示为整数
+            const tdB = document.createElement('td');
+            const inputB = document.createElement('input');
+            inputB.type = 'number';
+            inputB.step = '1'; // 步长为 1
+            inputB.min = '0';
+            inputB.max = '70';
+            // 显示值 = b * 15 + 30，并取整
+            inputB.value = Math.round(item.b * SCALE_FACTOR + OFFSET);
+            inputB.dataset.index = index;
+            inputB.dataset.field = 'b';
+            tdB.appendChild(inputB);
+            tr.appendChild(tdB);
+
+            // 3. 猜测度 (c) - 保持两位小数
+            const tdC = document.createElement('td');
+            const inputC = document.createElement('input');
+            inputC.type = 'number';
+            inputC.step = '0.01';
+            inputC.min = '0';
+            inputC.max = '1';
+            inputC.value = item.c.toFixed(2);
+            inputC.dataset.index = index;
+            inputC.dataset.field = 'c';
+            tdC.appendChild(inputC);
+            tr.appendChild(tdC);
+
+            // 4. 开关列
             const tdSwitch = document.createElement('td');
             const switchContainer = document.createElement('div');
             switchContainer.className = 'switch-container';
 
             const label = document.createElement('label');
             label.className = 'switch';
-            
+
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.checked = (item.observed === 1);
             checkbox.dataset.index = index;
             checkbox.dataset.field = 'observed';
-            
+
             const slider = document.createElement('span');
             slider.className = 'slider';
 
-            // 只保留“答对”标签
             const labelOn = document.createElement('span');
             labelOn.className = 'switch-label on';
             labelOn.textContent = '答对';
 
             label.appendChild(checkbox);
             label.appendChild(slider);
-            
+
             switchContainer.appendChild(label);
             switchContainer.appendChild(labelOn);
-            // 删除了 labelOff
-            
+
             tdSwitch.appendChild(switchContainer);
             tr.appendChild(tdSwitch);
 
@@ -589,7 +623,7 @@
         });
     }
 
-    // 保存配置
+    // 保存配置 (整数输入转回浮点计算)
     saveBtn.onclick = () => {
         const inputs = configBody.querySelectorAll('input');
         let valid = true;
@@ -598,27 +632,39 @@
         inputs.forEach(input => {
             const idx = parseInt(input.dataset.index);
             const field = input.dataset.field;
+            const val = parseFloat(input.value);
 
             if (field === 'observed') {
                 items[idx].observed = input.checked ? 1 : 0;
             } else {
-                const numVal = parseFloat(input.value);
-                if (isNaN(numVal)) {
+                if (isNaN(val)) {
                     valid = false;
                     errorMsg = `题目 ${idx+1} 的 ${field} 参数无效`;
                     return;
                 }
-                if (field === 'a' && numVal <= 0) {
-                    valid = false;
-                    errorMsg = `题目 ${idx+1} 的区分度 a 必须大于 0`;
-                    return;
+
+                // 逆映射逻辑
+                if (field === 'a') {
+                    // 输入的是整数分值区分度，转为 theta 区分度
+                    if (val < 1) {
+                        valid = false;
+                        errorMsg = `题目 ${idx+1} 的区分度至少为 1`;
+                        return;
+                    }
+                    items[idx].a = val / SCALE_FACTOR;
                 }
-                if (field === 'c' && (numVal < 0 || numVal > 1)) {
-                    valid = false;
-                    errorMsg = `题目 ${idx+1} 的猜测度 c 必须在 0 到 1 之间`;
-                    return;
+                else if (field === 'b') {
+                    // 输入的是整数分值难度，转为 theta 难度
+                    items[idx].b = (val - OFFSET) / SCALE_FACTOR;
                 }
-                items[idx][field] = numVal;
+                else if (field === 'c') {
+                    if (val < 0 || val > 1) {
+                        valid = false;
+                        errorMsg = `题目 ${idx+1} 的猜测度必须在 0 到 1 之间`;
+                        return;
+                    }
+                    items[idx].c = val;
+                }
             }
         });
 
