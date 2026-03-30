@@ -76,18 +76,14 @@
     }
     function zload()
     {
-        if(!IsPC())
-            window.location.href='J2.html';
+        //if(!IsPC())
+        //    window.location.href='J2.html';
         document.getElementById('verb').focus();
         document.getElementById('verb').setSelectionRange(0,document.getElementById('verb').value.length);
     }
 </script>
 </head>
-<style>
-        body{background:url(pic/pc2.png) top left;
-        background-size:100%;
-        background-attachment: fixed;}
-        </style>
+
 <body onload="zload()" >
 <h1>古典日语动词变形器</h1>
 <HR>
