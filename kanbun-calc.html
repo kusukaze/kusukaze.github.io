@@ -216,15 +216,15 @@
             const currentIdx = stateStack.peek();
             const currentOrder = orders[currentIdx];
 
-            // a. レ点 → 直接输出
-            if (currentOrder.KEY_NAME_RE === 1) {
+            // a. 一上 → 修改当前KEY_NAME_L1
+            if (currentOrder.KEY_NAME_L2 === 1) {
+                // 更新 initL1
+                initL1 = currentOrder.KEY_NAME_L1;
                 ans.push(currentIdx);
                 stateStack.pop();
             }
-            // b. 一上 → 修改当前KEY_NAME_L1
-            else if (currentOrder.KEY_NAME_L2 === 1) {
-                // 更新 initL1
-                initL1 = currentOrder.KEY_NAME_L1;
+            // b. レ点 → 直接输出
+            else if (currentOrder.KEY_NAME_RE === 1) {
                 ans.push(currentIdx);
                 stateStack.pop();
             }
