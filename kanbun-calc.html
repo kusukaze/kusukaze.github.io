@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汉文训读计算器</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --border-color: #ddd;
+            --bg-color: #f9f9f9;
+        }
+
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        /* 输入区域样式 */
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #357abd;
+        }
+
+        button#convertBtn {
+            display: none; /* 修改点：默认隐藏 */
+            width: 100%;
+            margin-top: 20px;
+            background-color: #28a745;
+        }
+
+        button#convertBtn:hover {
+            background-color: #218838;
+        }
+
+        /* 表格样式 */
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 20px;
+            display: none; /* 初始隐藏 */
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: var(--bg-color);
+            font-weight: bold;
+        }
+
+        /* 下拉框和输入框样式 */
+        select, input[type="text"].kana-input {
+            width: 90%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        /* 结果区域样式 */
+        #resultArea {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #eef7ff;
+            border: 1px solid #b6e0ff;
+            border-radius: 4px;
+            font-size: 18px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>汉文训读计算器</h1>
+
+    <!-- 1. 输入区域 -->
+    <div class="input-group">
+        <input type="text" id="kanbunInput" placeholder="请输入汉文（例如：学而时习之）">
+        <button id="confirmBtn">确定</button>
+    </div>
+
+    <!-- 2. 表格区域 -->
+    <div class="table-container" id="tableContainer">
+        <table id="kanbunTable">
+            <thead>
+            <tr>
+                <th style="width: 20%;">标记</th>
+                <th style="width: 20%;">汉字</th>
+                <th style="width: 40%;">送假名</th>
+                <th style="width: 20%;">是否跳过</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- 行将通过 JS 动态生成 -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 3. 转换按钮 (默认隐藏) -->
+    <button id="convertBtn">转换</button>
+
+    <!-- 4. 结果展示 -->
+    <div id="resultArea"></div>
+</div>
+
+<script>
+    class Stack {
+        constructor() {
+            this.items = [];
+        }
+
+        // 入栈
+        push(element) {
+            this.items.push(element);
+        }
+
+        // 出栈
+        pop() {
+            if (this.isEmpty()) {
+                return "Underflow";
+            }
+            return this.items.pop();
+        }
+
+        // 查看栈顶元素
+        peek() {
+            if (this.isEmpty()) {
+                return "No elements in Stack";
+            }
+            return this.items[this.items.length - 1];
+        }
+
+        // 判断栈是否为空
+        isEmpty() {
+            return this.items.length === 0;
+        }
+    }
+</script>
+
+
+<script>
+    // 定义常量
+    //const KEY_NAME_RE = 'KEY_NAME_RE';
+    //const KEY_NAME_L1 = 'KEY_NAME_L1';
+    //const KEY_NAME_L2 = 'KEY_NAME_L2';
+    //const KEY_NAME_OKI = 'KEY_NAME_OKI';
+
+    /**
+     * 处理订单栈的函数
+     * @param {Object[]} orders - 订单字典数组
+     * @param {Object} stateStack - 栈对象 (需实现 peek, pop, isEmpty 方法)
+     * @returns {number[]} ans - 结果数组
+     */
+    function backRead(orders, stateStack) {
+        const ans = [];
+
+        // ① 获取栈顶元素 idx，记录 initL1
+        // 首先判断栈是否为空
+        if (stateStack.isEmpty()) {
+            return ans;
+        }
+
+        // 获取栈顶下标（不移除）
+        const idx = stateStack.peek();
+        // 记录初始 L1 值
+        let initL1;
+
+        // ② 循环处理
+        while (!stateStack.isEmpty()) {
+            const currentIdx = stateStack.peek();
+            const currentOrder = orders[currentIdx];
+
+            // a. レ点 → 直接输出
+            if (currentOrder.KEY_NAME_RE === 1) {
+                ans.push(currentIdx);
+                stateStack.pop();
+            }
+            // b. 一上 → 修改当前KEY_NAME_L1
+            else if (currentOrder.KEY_NAME_L2 === 1) {
+                // 更新 initL1
+                initL1 = currentOrder.KEY_NAME_L1;
+                ans.push(currentIdx);
+                stateStack.pop();
+            }
+            // c. 都是一二三或都是上中下 → 直接输出
+            else if (currentOrder.KEY_NAME_L1 === initL1) {
+                ans.push(currentIdx);
+                stateStack.pop();
+            }
+
+            // d. 一二三切到中下 → 还不能读，退出循环
+            else {
+                break;
+            }
+        }
+
+        return ans;
+    }
+
+    /**
+     * 主函数：汉文训读工具
+     * @param {Array} orders - 字典数组，包含配置项
+     * @param {Array} kanjis - 汉字数组（当前逻辑未直接使用，保留参数）
+     * @param {Array} kanas - 假名数组（当前逻辑未直接使用，保留参数）
+     * @returns {Array} - 返回处理后的索引数组 ans
+     */
+    function kanbunReadUtil(orders, kanjis, kanas) {
+        // ① 新建一个栈 stateStack
+        let stateStack = new Stack();
+        let ans = [];
+
+        // ② 顺序遍历数组 orders
+        for (let i = 0; i < orders.length; i++) {
+            let currentOrder = orders[i];
+
+            // a. レ点 → 入栈
+            if (currentOrder.KEY_NAME_RE === 1) {
+                stateStack.push(i);
+            }
+            // b. 一二三、上中下 → 入栈；如果是一或上且没有レ，则立即执行 backRead
+            else if (currentOrder.KEY_NAME_L1 > 0) {
+                stateStack.push(i);
+                if(!stateStack.isEmpty() && orders[stateStack.peek()].KEY_NAME_L2 === 1
+                    && orders[stateStack.peek()].KEY_NAME_RE === 0) {
+                    ans = ans.concat(backRead(orders, stateStack));
+                }
+            }
+            // c. 无标记 → 执行 backRead，并将返回的数组拼接到 ans 后
+            else {
+                // 如果是レ点，则先读这个字，再backRead；否则顺序相反
+                ans.push(i);
+                ans = ans.concat(backRead(orders, stateStack));
+            }
+        }
+
+        // ③ 执行 backRead，并将返回的数组拼接到 ans 后
+        const finalBackReadResult = backRead(orders, stateStack);
+        ans = ans.concat(finalBackReadResult);
+
+        // ④ 将需要跳过的汉字删除
+        const indicesToRemove = new Set();
+        for (let i = 0; i < orders.length; i++) {
+            if (orders[i].KEY_NAME_OKI > 0) {
+                indicesToRemove.add(i);
+            }
+        }
+        ans = ans.filter(item => !indicesToRemove.has(item));
+
+        return ans;
+    }
+
+    function validInfo(orders) {
+        if (!orders || orders.length === 0) return "OK\n";
+        let ans = "";
+
+        if (orders[orders.length-1].KEY_NAME_RE === 1) {
+            ans += "⚠ 最后一个字不能标レ\n";
+        }
+
+        let num1 = 0;
+        for (let i = orders.length - 1; i >= 0; i--) {
+            if (orders[i].KEY_NAME_L1 === 1) {
+                if (orders[i].KEY_NAME_L2 - num1 != 1) {
+                    ans += "⚠ “一二三”序号跳跃/颠倒/重复\n"
+                    break;
+                }
+                num1 = orders[i].KEY_NAME_L2;
+            }
+        }
+
+        let num2 = 0;
+        for (let i = orders.length - 1; i >= 0; i--) {
+            if (orders[i].KEY_NAME_L1 === 2) {
+                if (orders[i].KEY_NAME_L2 - num2 != 1 && num2 != 1) {
+                    ans += "⚠ “上中下”序号跳跃/颠倒/重复\n"
+                    break;
+                }
+                num2 = orders[i].KEY_NAME_L2;
+            }
+        }
+
+        if (ans.length === 0) {
+            ans = "OK\n";
+        }
+
+        return ans;
+    }
+
+    function kanbunRead(orders, kanjis, kanas) {
+        console.log("调用 kanbunRead:", orders, kanjis, kanas);
+        const indices = kanbunReadUtil(orders, kanjis, kanas);
+        let ans = '';
+        for (let i = 0; i < indices.length; i++) {
+            let idx = indices[i];
+            ans += kanjis[idx] + kanas[idx];
+        }
+        return `${validInfo(orders)}\n${ans}`;
+    };
+
+</script>
+
+<script>
+    // 常量定义
+    const SKIP_DEFAULT_CHARS = ["而", "於", "于", "乎", "矣", "焉", "兮"];
+
+    // 标记选项
+    const MARK_OPTIONS = ["", "レ", "一", "二", "三", "上", "中", "下", "一+レ", "上+レ"];
+
+    // 假设的外部函数
+    if (typeof kanbunRead !== 'function') {
+        window.kanbunRead = function(orders, kanjis, kanas) {
+            console.log("调用 kanbunRead:", orders, kanjis, kanas);
+            return `【模拟结果】\n汉字：${kanjis}\n处理顺序：${JSON.stringify(orders)}\n(此处应显示真实的训读结果)`;
+        };
+    }
+
+    // DOM 元素
+    const inputEl = document.getElementById('kanbunInput');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const tableContainer = document.getElementById('tableContainer');
+    const tableBody = document.querySelector('#kanbunTable tbody');
+    const convertBtn = document.getElementById('convertBtn');
+    const resultArea = document.getElementById('resultArea');
+
+    // 1. 生成表格逻辑
+    function generateTable() {
+        const text = inputEl.value.trim().replace(/[\s\p{P}]/gu, '');
+        if (!text) {
+            alert("请输入汉文");
+            return;
+        }
+
+        // 清空旧表格
+        tableBody.innerHTML = '';
+
+        // 将字符串分割为字符数组
+        const chars = text.split('');
+
+        chars.forEach((char, index) => {
+            const tr = document.createElement('tr');
+
+            // --- 第一列：标记 (下拉框) ---
+            const tdMark = document.createElement('td');
+            const select = document.createElement('select');
+            MARK_OPTIONS.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt;
+                option.textContent = opt;
+                select.appendChild(option);
+            });
+            tdMark.appendChild(select);
+
+            // --- 第二列：汉字 (不可修改) ---
+            const tdChar = document.createElement('td');
+            tdChar.textContent = char;
+
+            // --- 第三列：送假名 (输入框) ---
+            const tdKana = document.createElement('td');
+            const kanaInput = document.createElement('input');
+            kanaInput.type = 'text';
+            kanaInput.className = 'kana-input';
+            kanaInput.placeholder = '输入送假名';
+            tdKana.appendChild(kanaInput);
+
+            // --- 第四列：是否跳过 (勾选框) ---
+            const tdSkip = document.createElement('td');
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            // 默认勾选逻辑
+            if (SKIP_DEFAULT_CHARS.includes(char)) {
+                checkbox.checked = true;
+            }
+            tdSkip.appendChild(checkbox);
+
+            // 组装行
+            tr.appendChild(tdMark);
+            tr.appendChild(tdChar);
+            tr.appendChild(tdKana);
+            tr.appendChild(tdSkip);
+
+            tableBody.appendChild(tr);
+        });
+
+        // 显示表格
+        tableContainer.style.display = 'block';
+
+        // 显示转换按钮
+        convertBtn.style.display = 'block';
+
+        // 隐藏旧结果
+        resultArea.style.display = 'none';
+    }
+
+    // 2. 转换逻辑
+    function performConversion() {
+        let rows = tableBody.querySelectorAll('tr');
+        let orders = [];
+        let kanjis = ""; // 修正：初始化为字符串
+        let kanas = [];
+
+        rows.forEach(row => {
+            const mark = row.cells[0].querySelector('select').value;
+            const char = row.cells[1].textContent;
+            const kana = row.cells[2].querySelector('input').value;
+            const isSkip = row.cells[3].querySelector('input').checked;
+
+            // 收集汉字和送假名
+            kanjis += char;
+            kanas.push(kana);
+
+            // 构建 orders 字典
+            let orderItem = {};
+
+            // KEY_NAME_RE 逻辑
+            if (["レ", "一+レ", "上+レ"].includes(mark)) {
+                orderItem.KEY_NAME_RE = 1;
+            } else {
+                orderItem.KEY_NAME_RE = 0;
+            }
+
+            // KEY_NAME_L1 逻辑
+            if (["", "レ"].includes(mark)) {
+                orderItem.KEY_NAME_L1 = 0;
+            } else if (["一", "二", "三", "一+レ"].includes(mark)) {
+                orderItem.KEY_NAME_L1 = 1;
+            } else if (["上", "中", "下", "上+レ"].includes(mark)) {
+                orderItem.KEY_NAME_L1 = 2;
+            }
+
+            // KEY_NAME_L2 逻辑
+            if (["一", "上", "一+レ", "上+レ"].includes(mark)) {
+                orderItem.KEY_NAME_L2 = 1;
+            } else if (["二", "中"].includes(mark)) {
+                orderItem.KEY_NAME_L2 = 2;
+            } else if (["三"].includes(mark)) {
+                orderItem.KEY_NAME_L2 = 3;
+            } else {
+                // 空、レ 或其他
+                orderItem.KEY_NAME_L2 = 0;
+            }
+
+            // KEY_NAME_OKI 逻辑
+            orderItem.KEY_NAME_OKI = isSkip ? 1 : 0;
+
+            orders.push(orderItem);
+        });
+
+        // 调用外部函数
+        const result = kanbunRead(orders, kanjis, kanas);
+
+        // 显示结果
+        resultArea.textContent = result;
+        resultArea.style.display = 'block';
+
+        // 滚动到底部
+        resultArea.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 事件监听
+    confirmBtn.addEventListener('click', generateTable);
+
+    inputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            generateTable();
+        }
+    });
+
+    convertBtn.addEventListener('click', performConversion);
+
+</script>
+
+</body>
+</html>
