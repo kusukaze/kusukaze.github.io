@@ -335,13 +335,13 @@
         const endsWithUp = orders[orders.length-1].KEY_NAME_L2 === 2
                      && orders[orders.length-1].KEY_NAME_L2 === 1;   // 是否以上结尾
 
-        if(hasGroup1 && !hasGroup2 && !endsWithOne) {
-            ans += "⚠ 只使用“一二三”时，最后一个字应标“一”\n";
-        }
+        //if(hasGroup1 && !hasGroup2 && !endsWithOne) {
+        //    ans += "⚠ 只使用“一二三”时，最后一个字应标“一”\n";
+        //}
 
-        if(hasGroup2 && !endsWithOne) {
-            ans += "⚠ 使用“上中下”时，最后一个字应标“上”\n";
-        }
+        //if(hasGroup2 && !endsWithOne) {
+        //    ans += "⚠ 使用“上中下”时，最后一个字应标“上”\n";
+        //}
 
         if(!hasGroup1 && hasGroup2) {
             ans += "⚠ 跳过“一二三”直接使用“上中下”\n";
