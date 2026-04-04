@@ -300,25 +300,51 @@
         }
 
         let num1 = 0;
-        for (let i = orders.length - 1; i >= 0; i--) {
+        let i;
+        for (i = orders.length - 1; i >= 0; i--) {
             if (orders[i].KEY_NAME_L1 === 1) {
                 if (orders[i].KEY_NAME_L2 - num1 != 1) {
-                    ans += "⚠ “一二三”序号跳跃/颠倒/重复\n"
+                    ans += "⚠ “一二三”序号跳跃/颠倒/重复\n";
                     break;
                 }
                 num1 = orders[i].KEY_NAME_L2;
             }
         }
+        if (i === -1 && num1 === 1) {
+            ans += "⚠ “一二三”只使用了“一”\n";
+        }
 
         let num2 = 0;
-        for (let i = orders.length - 1; i >= 0; i--) {
+        for (i = orders.length - 1; i >= 0; i--) {
             if (orders[i].KEY_NAME_L1 === 2) {
                 if (orders[i].KEY_NAME_L2 - num2 != 1 && num2 != 1) {
-                    ans += "⚠ “上中下”序号跳跃/颠倒/重复\n"
+                    ans += "⚠ “上中下”序号跳跃/颠倒/重复\n";
                     break;
                 }
                 num2 = orders[i].KEY_NAME_L2;
             }
+        }
+        if (i === -1 && num2 === 1) {
+            ans += "⚠ “上中下”只使用了“上”\n";
+        }
+
+        const hasGroup1 = orders.some(order => order.KEY_NAME_L1 === 1);   // 是否有一二三
+        const hasGroup2 = orders.some(order => order.KEY_NAME_L1 === 2);   // 是否有上中下
+        const endsWithOne = orders[orders.length-1].KEY_NAME_L2 === 1
+                     && orders[orders.length-1].KEY_NAME_L2 === 1;   // 是否以一结尾
+        const endsWithUp = orders[orders.length-1].KEY_NAME_L2 === 2
+                     && orders[orders.length-1].KEY_NAME_L2 === 1;   // 是否以上结尾
+
+        if(hasGroup1 && !hasGroup2 && !endsWithOne) {
+            ans += "⚠ 只使用“一二三”时，最后一个字应标“一”\n";
+        }
+
+        if(hasGroup2 && !endsWithOne) {
+            ans += "⚠ 使用“上中下”时，最后一个字应标“上”\n";
+        }
+
+        if(!hasGroup1 && hasGroup2) {
+            ans += "⚠ 跳过“一二三”直接使用“上中下”\n";
         }
 
         if (ans.length === 0) {
