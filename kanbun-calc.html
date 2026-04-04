@@ -195,20 +195,8 @@
     }
 </script>
 
-
 <script>
-    // 定义常量
-    //const KEY_NAME_RE = 'KEY_NAME_RE';
-    //const KEY_NAME_L1 = 'KEY_NAME_L1';
-    //const KEY_NAME_L2 = 'KEY_NAME_L2';
-    //const KEY_NAME_OKI = 'KEY_NAME_OKI';
-
-    /**
-     * 处理订单栈的函数
-     * @param {Object[]} orders - 订单字典数组
-     * @param {Object} stateStack - 栈对象 (需实现 peek, pop, isEmpty 方法)
-     * @returns {number[]} ans - 结果数组
-     */
+    // 通过栈输出暂时不读的汉字
     function backRead(orders, stateStack) {
         const ans = [];
 
@@ -255,13 +243,8 @@
         return ans;
     }
 
-    /**
-     * 主函数：汉文训读工具
-     * @param {Array} orders - 字典数组，包含配置项
-     * @param {Array} kanjis - 汉字数组（当前逻辑未直接使用，保留参数）
-     * @param {Array} kanas - 假名数组（当前逻辑未直接使用，保留参数）
-     * @returns {Array} - 返回处理后的索引数组 ans
-     */
+    // 核心处理函数。暂时不读的汉字先加入状态栈，要读的时候调用backRead获取
+    // 返回下标数组，代表阅读顺序
     function kanbunReadUtil(orders, kanjis, kanas) {
         // ① 新建一个栈 stateStack
         let stateStack = new Stack();
@@ -307,6 +290,7 @@
         return ans;
     }
 
+    // 检查顺序标记是否有效
     function validInfo(orders) {
         if (!orders || orders.length === 0) return "OK\n";
         let ans = "";
@@ -344,6 +328,14 @@
         return ans;
     }
 
+    // 主函数。根据输入信息获取有效性检查、训读结果
+    // orders：字典数组，存储顺序标记
+    //     KEY_NAME_RE：是否为レ点（1-是，0-否）
+    //     KEY_NAME_L1：数字序号的层级（0-无数字，1-一二三，2-上中下）
+    //     KEY_NAME_L2：数字大小（0-无数字，1-一上，2-二中，3-三下）
+    //     KEY_NAME_OKI：置き字，即是否跳过（1-是，0-否）
+    // kanjis：字符串，存储汉字原始顺序
+    // kanas：字符串数组，存储每个汉字的送假名
     function kanbunRead(orders, kanjis, kanas) {
         console.log("调用 kanbunRead:", orders, kanjis, kanas);
         const indices = kanbunReadUtil(orders, kanjis, kanas);
