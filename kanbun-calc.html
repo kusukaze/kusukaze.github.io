@@ -300,10 +300,17 @@
         }
 
         let num1 = 0;
+        let onlyOne = false;
         let i;
         for (i = orders.length - 1; i >= 0; i--) {
             if (orders[i].KEY_NAME_L1 === 1) {
-                if (orders[i].KEY_NAME_L2 - num1 != 1) {
+                if (orders[i].KEY_NAME_L2 === 1) {
+                    if (num1 === 1) {
+                        onlyOne = true;
+                    }
+                    num1 = 1;
+                }
+                else if (orders[i].KEY_NAME_L2 - num1 != 1) {
                     ans += "⚠ “一二三”序号跳跃/颠倒/重复\n";
                     break;
                 }
@@ -311,13 +318,23 @@
             }
         }
         if (i === -1 && num1 === 1) {
+            onlyOne = true;
+        }
+        if (onlyOne) {
             ans += "⚠ “一二三”只使用了“一”\n";
         }
 
         let num2 = 0;
+        let onlyUp = false;
         for (i = orders.length - 1; i >= 0; i--) {
             if (orders[i].KEY_NAME_L1 === 2) {
-                if (orders[i].KEY_NAME_L2 - num2 != 1 && num2 != 1) {
+                if (orders[i].KEY_NAME_L2 === 1) {
+                    if (num2 === 1) {
+                        onlyUp = true;
+                    }
+                    num2 = 1;
+                }
+                else if (orders[i].KEY_NAME_L2 - num2 != 1 && num2 != 1) {
                     ans += "⚠ “上中下”序号跳跃/颠倒/重复\n";
                     break;
                 }
@@ -325,6 +342,9 @@
             }
         }
         if (i === -1 && num2 === 1) {
+            onlyUp = true;
+        }
+        if (onlyUp) {
             ans += "⚠ “上中下”只使用了“上”\n";
         }
 
@@ -366,11 +386,15 @@
         console.log("调用 kanbunRead:", orders, kanjis, kanas);
         const indices = kanbunReadUtil(orders, kanjis, kanas);
         let ans = '';
+        let stackValidInfo = '';
         for (let i = 0; i < indices.length; i++) {
             let idx = indices[i];
             ans += kanjis[idx] + kanas[idx];
         }
-        return `${validInfo(orders)}\n${ans}`;
+        if (indices.length != orders.filter(order => order.KEY_NAME_OKI === 0).length) {
+            stackValidInfo = "⚠ “一二三”和“上中下”互相嵌套/顺序错误，无法生成完整训读顺序\n";
+        }
+        return `${validInfo(orders)}${stackValidInfo}\n${ans}`;
     };
 
 </script>
