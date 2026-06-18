@@ -77,6 +77,7 @@
     <div class="tabs">
         <button class="tab-button active" onclick="openTab(event, 'registration')">报名人数</button>
         <button class="tab-button" onclick="openTab(event, 'attendance')">实考人数</button>
+        <button class="tab-button" onclick="openTab(event, 'total')">总人数</button>
         <button class="tab-button" onclick="openTab(event, 'wastedFee')">浪费的报名费</button>
     </div>
 
@@ -86,9 +87,11 @@
     <div id="attendance" class="tab-content">
         <canvas id="attendanceChart"></canvas>
     </div>
+    <div id="total" class="tab-content">
+        <canvas id="totalChart"></canvas>
+    </div>
     <div id="wastedFee" class="tab-content">
         <canvas id="wastedFeeChart"></canvas>
-
     </div>
 </div>
 
@@ -189,6 +192,8 @@
                 renderRegistrationChart();
             } else if (tabName === 'attendance') {
                 renderAttendanceChart();
+            } else if (tabName === 'total') {
+                renderTotalChart();
             } else if (tabName === 'wastedFee') {
                 renderWastedFeeChart();
             }
@@ -344,6 +349,84 @@
                         },
                         legend: {
                             position: 'top',
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '考试时间'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '人数'
+                            },
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    if (value >= 1000000) return (value / 1000000) + 'M';
+                                    if (value >= 1000) return (value / 1000) + 'K';
+                                    return value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderTotalChart() {
+            const ctx = document.getElementById('totalChart').getContext('2d');
+            window.currentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: jlptData.map(d => d.year),
+                    datasets: [
+                        {
+                            label: '总报名人数',
+                            data: jlptData.map(d => d.total_reg),
+                            borderColor: '#FFCE56',
+                            backgroundColor: 'rgba(255, 206, 86, 0.1)',
+                            tension: 0.2,
+                            fill: false
+                        },
+                        {
+                            label: '总实考人数',
+                            data: jlptData.map(d => d.total_att),
+                            borderColor: '#36A2EB',
+                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                            tension: 0.2,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'JLPT 总报名与总实考人数趋势',
+                            font: { size: 16 }
+                        },
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                title: function(context) {
+                                    return '考试时间：' + context[0].label;
+                                },
+                                label: function(context) {
+                                    const datasetLabel = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    return `${datasetLabel}: ${value.toLocaleString()} 人`;
+                                }
+                            }
                         }
                     },
                     scales: {
