@@ -413,20 +413,6 @@
                         },
                         legend: {
                             position: 'top',
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            callbacks: {
-                                title: function(context) {
-                                    return '考试时间：' + context[0].label;
-                                },
-                                label: function(context) {
-                                    const datasetLabel = context.dataset.label || '';
-                                    const value = context.parsed.y;
-                                    return `${datasetLabel}: ${value.toLocaleString()} 人`;
-                                }
-                            }
                         }
                     },
                     scales: {
