@@ -78,6 +78,7 @@
         <button class="tab-button active" onclick="openTab(event, 'registration')">报名人数</button>
         <button class="tab-button" onclick="openTab(event, 'attendance')">实考人数</button>
         <button class="tab-button" onclick="openTab(event, 'total')">总人数</button>
+        <button class="tab-button" onclick="openTab(event, 'totalFee')">总报名费</button>
         <button class="tab-button" onclick="openTab(event, 'wastedFee')">浪费的报名费</button>
     </div>
 
@@ -89,6 +90,9 @@
     </div>
     <div id="total" class="tab-content">
         <canvas id="totalChart"></canvas>
+    </div>
+    <div id="totalFee" class="tab-content">
+        <canvas id="totalFeeChart"></canvas>
     </div>
     <div id="wastedFee" class="tab-content">
         <canvas id="wastedFeeChart"></canvas>
@@ -150,6 +154,21 @@
             }
         }
 
+        const totalFeeData = jlptData.map(item => {
+            const year = item.year;
+            const levels = ['n1', 'n2', 'n3', 'n4', 'n5'];
+            let totalWasted = 0;
+            for (const level of levels) {
+                const reg = item[`${level}_reg`];
+                const fee = getFee(year, level);
+                totalWasted += reg * fee;
+            }
+            return {
+                year: year,
+                total: totalWasted
+            };
+        });
+
         const wastedFeeData = jlptData.map(item => {
             const year = item.year;
             const levels = ['n1', 'n2', 'n3', 'n4', 'n5'];
@@ -193,6 +212,8 @@
                 renderAttendanceChart();
             } else if (tabName === 'total') {
                 renderTotalChart();
+            } else if (tabName === 'totalFee') {
+                renderTotalFeeChart();
             } else if (tabName === 'wastedFee') {
                 renderWastedFeeChart();
             }
@@ -425,6 +446,57 @@
                             title: {
                                 display: true,
                                 text: '人数'
+                            },
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    if (value >= 1000000) return (value / 1000000) + 'M';
+                                    if (value >= 1000) return (value / 1000) + 'K';
+                                    return value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- 渲染总报名费图表 ---
+        function renderTotalFeeChart() {
+            const ctx = document.getElementById('totalFeeChart').getContext('2d');
+            window.currentChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: totalFeeData.map(d => d.year),
+                    datasets: [{
+                        label: '总报名费 (元)',
+                        data: totalFeeData.map(d => d.total),
+                        backgroundColor: 'rgba(87, 217, 130, 0.8)',
+                        borderColor: '#61F291',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'JLPT 总报名费趋势',
+                            font: { size: 16 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '考试时间'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '金额 (元)'
                             },
                             beginAtZero: true,
                             ticks: {
