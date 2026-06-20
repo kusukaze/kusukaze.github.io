@@ -78,7 +78,7 @@
         <button class="tab-button active" onclick="openTab(event, 'registration')">报名人数</button>
         <button class="tab-button" onclick="openTab(event, 'attendance')">实考人数</button>
         <button class="tab-button" onclick="openTab(event, 'total')">总人数</button>
-        <button class="tab-button" onclick="openTab(event, 'ratio')">参加比例</button>
+        <button class="tab-button" onclick="openTab(event, 'ratio')">出席比例</button>
         <button class="tab-button" onclick="openTab(event, 'totalFee')">总报名费</button>
         <button class="tab-button" onclick="openTab(event, 'wastedFee')">浪费的报名费</button>
     </div>
@@ -467,7 +467,7 @@
             });
         }
 
-        // --- 渲染参加比例图表 ---
+        // --- 渲染出席比例图表 ---
         function renderRatioChart() {
             const ctx = document.getElementById('ratioChart').getContext('2d');
             window.currentChart = new Chart(ctx, {
@@ -476,7 +476,7 @@
                     labels: jlptData.map(d => d.year),
                     datasets: [
                         {
-                            label: 'N1 参加比例',
+                            label: 'N1 出席比例',
                             data: jlptData.map(d => d.n1_att / d.n1_reg * 100),
                             borderColor: '#FF6384',
                             backgroundColor: 'rgba(255, 99, 132, 0.1)',
@@ -484,7 +484,7 @@
                             fill: false
                         },
                         {
-                            label: 'N2 参加比例',
+                            label: 'N2 出席比例',
                             data: jlptData.map(d => d.n2_att / d.n2_reg * 100),
                             borderColor: '#36A2EB',
                             backgroundColor: 'rgba(54, 162, 235, 0.1)',
@@ -492,7 +492,7 @@
                             fill: false
                         },
                         {
-                            label: 'N3 参加比例',
+                            label: 'N3 出席比例',
                             data: jlptData.map(d => d.n3_att / d.n3_reg * 100),
                             borderColor: '#FFCE56',
                             backgroundColor: 'rgba(255, 206, 86, 0.1)',
@@ -500,7 +500,7 @@
                             fill: false
                         },
                         {
-                            label: 'N4 参加比例',
+                            label: 'N4 出席比例',
                             data: jlptData.map(d => d.n4_att / d.n4_reg * 100),
                             borderColor: '#4BC0C0',
                             backgroundColor: 'rgba(75, 192, 192, 0.1)',
@@ -508,7 +508,7 @@
                             fill: false
                         },
                         {
-                            label: 'N5 参加比例',
+                            label: 'N5 出席比例',
                             data: jlptData.map(d => d.n5_att / d.n5_reg * 100),
                             borderColor: '#9966FF',
                             backgroundColor: 'rgba(153, 102, 255, 0.1)',
@@ -516,7 +516,7 @@
                             fill: false
                         },
                         {
-                            label: '总参加比例',
+                            label: '总出席比例',
                             data: jlptData.map(d => d.total_att / d.total_reg * 100),
                             borderColor: '#999999',
                             backgroundColor: 'rgba(128, 128, 128, 0.1)',
@@ -531,7 +531,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: 'JLPT 参加比例趋势',
+                            text: 'JLPT 出席比例趋势',
                             font: { size: 16 }
                         },
                         legend: {
