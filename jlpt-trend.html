@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JLPT报考热度趋势</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -78,6 +80,7 @@
         <button class="tab-button active" onclick="openTab(event, 'registration')">报名人数</button>
         <button class="tab-button" onclick="openTab(event, 'attendance')">实考人数</button>
         <button class="tab-button" onclick="openTab(event, 'total')">总人数</button>
+        <button class="tab-button" onclick="openTab(event, 'increase')">增长率</button>
         <button class="tab-button" onclick="openTab(event, 'ratio')">出席率</button>
         <button class="tab-button" onclick="openTab(event, 'totalFee')">总报名费</button>
         <button class="tab-button" onclick="openTab(event, 'wastedFee')">浪费的报名费</button>
@@ -91,6 +94,9 @@
     </div>
     <div id="total" class="tab-content">
         <canvas id="totalChart"></canvas>
+    </div>
+    <div id="increase" class="tab-content">
+        <canvas id="increaseChart"></canvas>
     </div>
     <div id="ratio" class="tab-content">
         <canvas id="ratioChart"></canvas>
@@ -216,6 +222,8 @@
                 renderAttendanceChart();
             } else if (tabName === 'total') {
                 renderTotalChart();
+            } else if (tabName === 'increase') {
+                renderIncreaseChart();
             } else if (tabName === 'ratio') {
                 renderRatioChart();
             } else if (tabName === 'totalFee') {
@@ -303,8 +311,8 @@
                             beginAtZero: true,
                             ticks: {
                                 callback: function(value) {
-                                    if (value >= 1000000) return (value / 1000000) + 'M';
-                                    if (value >= 1000) return (value / 1000) + 'K';
+                                    if (value >= 100000000) return (value / 100000000) + '亿';
+                                    if (value >= 10000) return (value / 10000) + '万';
                                     return value;
                                 }
                             }
@@ -392,8 +400,8 @@
                             beginAtZero: true,
                             ticks: {
                                 callback: function(value) {
-                                    if (value >= 1000000) return (value / 1000000) + 'M';
-                                    if (value >= 1000) return (value / 1000) + 'K';
+                                    if (value >= 100000000) return (value / 100000000) + '亿';
+                                    if (value >= 10000) return (value / 10000) + '万';
                                     return value;
                                 }
                             }
@@ -403,6 +411,7 @@
             });
         }
 
+        // --- 渲染总人数图表 ---
         function renderTotalChart() {
             const ctx = document.getElementById('totalChart').getContext('2d');
             window.currentChart = new Chart(ctx, {
@@ -456,10 +465,161 @@
                             beginAtZero: true,
                             ticks: {
                                 callback: function(value) {
-                                    if (value >= 1000000) return (value / 1000000) + 'M';
-                                    if (value >= 1000) return (value / 1000) + 'K';
+                                    if (value >= 100000000) return (value / 100000000) + '亿';
+                                    if (value >= 10000) return (value / 10000) + '万';
                                     return value;
                                 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- 渲染增长率图表 ---
+        function renderIncreaseChart() {
+            const yearToN1 = new Map(jlptData.map(d => [d.year, d.n1_reg]));
+            const yearToN2 = new Map(jlptData.map(d => [d.year, d.n2_reg]));
+            const yearToN3 = new Map(jlptData.map(d => [d.year, d.n3_reg]));
+            const yearToN4 = new Map(jlptData.map(d => [d.year, d.n4_reg]));
+            const yearToN5 = new Map(jlptData.map(d => [d.year, d.n5_reg]));
+            const yearToTotal = new Map(jlptData.map(d => [d.year, d.total_reg]));
+
+            const ctx = document.getElementById('increaseChart').getContext('2d');
+            window.currentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: jlptData.slice(2).map(d => d.year),
+                    datasets: [
+                        {
+                            label: 'N1 增长率',
+                            data: jlptData.map(d => {
+                              const [y, m] = d.year.split('.');
+                              const prev = yearToN1.get(`${+y - 1}.${m}`);
+                              return prev ? (d.n1_reg / prev - 1) * 100 : null;
+                            }).slice(2),
+                            borderColor: '#FF6384',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            tension: 0.2,
+                            fill: false
+                        },
+                        {
+                            label: 'N2 增长率',
+                            data: jlptData.map(d => {
+                              const [y, m] = d.year.split('.');
+                              const prev = yearToN2.get(`${+y - 1}.${m}`);
+                              return prev ? (d.n2_reg / prev - 1) * 100 : null;
+                            }).slice(2),
+                            borderColor: '#36A2EB',
+                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                            tension: 0.2,
+                            fill: false
+                        },
+                        {
+                            label: 'N3 增长率',
+                            data: jlptData.map(d => {
+                              const [y, m] = d.year.split('.');
+                              const prev = yearToN3.get(`${+y - 1}.${m}`);
+                              return prev ? (d.n3_reg / prev - 1) * 100 : null;
+                            }).slice(2),
+                            borderColor: '#FFCE56',
+                            backgroundColor: 'rgba(255, 206, 86, 0.1)',
+                            tension: 0.2,
+                            fill: false
+                        },
+                        {
+                            label: 'N4 增长率',
+                            data: jlptData.map(d => {
+                              const [y, m] = d.year.split('.');
+                              const prev = yearToN4.get(`${+y - 1}.${m}`);
+                              return prev ? (d.n4_reg / prev - 1) * 100 : null;
+                            }).slice(2),
+                            borderColor: '#4BC0C0',
+                            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                            tension: 0.2,
+                            fill: false
+                        },
+                        {
+                            label: 'N5 增长率',
+                            data: jlptData.map(d => {
+                              const [y, m] = d.year.split('.');
+                              const prev = yearToN5.get(`${+y - 1}.${m}`);
+                              return prev ? (d.n5_reg / prev - 1) * 100 : null;
+                            }).slice(2),
+                            borderColor: '#9966FF',
+                            backgroundColor: 'rgba(153, 102, 255, 0.1)',
+                            tension: 0.2,
+                            fill: false
+                        },
+                        {
+                            label: '总增长率',
+                            data: jlptData.map(d => {
+                              const [y, m] = d.year.split('.');
+                              const prev = yearToTotal.get(`${+y - 1}.${m}`);
+                              return prev ? (d.total_reg / prev - 1) * 100 : null;
+                            }).slice(2),
+                            borderColor: '#999999',
+                            backgroundColor: 'rgba(128, 128, 128, 0.1)',
+                            tension: 0.2,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'JLPT 报名人数增长率趋势（同比）',
+                            font: { size: 16 }
+                        },
+                        legend: {
+                            position: 'top',
+                        },
+                        zoom: {
+                          pan: {
+                            enabled: true,
+                            mode: 'y'
+                          },
+                          zoom: {
+                            wheel: {
+                              enabled: true
+                            },
+                            pinch: {
+                              enabled: true
+                            },
+                            mode: 'y'
+                          }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '考试时间'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '增长率 %'
+                            },
+                            min: -80,   // 建议最小值（不影响极端小值）
+                            max: 70,    // 建议最大值（不影响极端大值，但会优先用这个范围）
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return Math.round(value);
+                                }
+                            },
+                            grid: {
+                                color: (ctx) => {
+                                    return ctx.tick.value === 0 ? '#000' : 'rgba(64, 64, 64, 0.1)';
+                                  },
+                                  lineWidth: (ctx) => {
+                                    return ctx.tick.value === 0 ? 2 : 1;
+                                  }
                             }
                         }
                     }
@@ -553,8 +713,6 @@
                             beginAtZero: false,
                             ticks: {
                                 callback: function(value) {
-                                    if (value >= 1000000) return (value / 1000000) + 'M';
-                                    if (value >= 1000) return (value / 1000) + 'K';
                                     return value;
                                 }
                             }
@@ -604,8 +762,8 @@
                             beginAtZero: true,
                             ticks: {
                                 callback: function(value) {
-                                    if (value >= 1000000) return (value / 1000000) + 'M';
-                                    if (value >= 1000) return (value / 1000) + 'K';
+                                    if (value >= 100000000) return (value / 100000000) + '亿';
+                                    if (value >= 10000) return (value / 10000) + '万';
                                     return value;
                                 }
                             }
@@ -655,8 +813,8 @@
                             beginAtZero: true,
                             ticks: {
                                 callback: function(value) {
-                                    if (value >= 1000000) return (value / 1000000) + 'M';
-                                    if (value >= 1000) return (value / 1000) + 'K';
+                                    if (value >= 100000000) return (value / 100000000) + '亿';
+                                    if (value >= 10000) return (value / 10000) + '万';
                                     return value;
                                 }
                             }
