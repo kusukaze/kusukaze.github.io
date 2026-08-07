@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>は / が / 零助词 智能判定器</title>
+    <style>
+        :root {
+            --primary: #e74c3c;
+            --primary-light: #fce4ec;
+            --bg: #f5f5f5;
+            --card-bg: #ffffff;
+            --text: #333333;
+            --text-light: #777777;
+            --wa-color: #e74c3c;
+            --ga-color: #2980b9;
+            --zero-color: #8e44ad;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg); color: var(--text);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 20px;
+        }
+        .container {
+            background: var(--card-bg); width: 100%; max-width: 540px;
+            border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            padding: 30px; text-align: center;
+        }
+        h1 { font-size: 1.4rem; margin-bottom: 6px; color: var(--primary); }
+        .subtitle { font-size: 0.85rem; color: var(--text-light); margin-bottom: 24px; }
+        .progress-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #ddd; transition: background 0.3s; }
+        .dot.active { background: var(--primary); }
+        .dot.done { background: #27ae60; }
+        .module-tag {
+            display: inline-block; font-size: 0.7rem; font-weight: bold;
+            padding: 2px 10px; border-radius: 20px; margin-bottom: 10px;
+            color: #fff; letter-spacing: 1px;
+        }
+        .module-tag.hard { background: #e74c3c; }
+        .module-tag.context { background: #e67e22; }
+        .module-tag.special { background: #8e44ad; }
+        .module-tag.soft { background: #27ae60; }
+        .question-card {
+            background: var(--primary-light); padding: 18px 20px; border-radius: 12px;
+            margin-bottom: 8px; min-height: 50px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.05rem; line-height: 1.6; white-space: pre-line;
+        }
+        .example-box {
+            background: #f8f8f8; border-left: 4px solid #ccc;
+            padding: 10px 15px; margin-bottom: 18px; border-radius: 0 8px 8px 0;
+            font-size: 0.9rem; color: #555; text-align: left; line-height: 1.7;
+        }
+        .example-box em { font-style: normal; background: #ffeaa7; padding: 0 2px; border-radius: 2px; }
+        .options-grid { display: flex; flex-direction: column; gap: 10px; }
+        .opt-btn {
+            padding: 14px 16px; border: 2px solid #eee; background: #fff;
+            border-radius: 10px; font-size: 0.95rem; cursor: pointer;
+            transition: all 0.2s; color: var(--text); text-align: left; line-height: 1.4;
+        }
+        .opt-btn:hover { border-color: var(--primary); background: #fff5f5; }
+        .opt-btn:active { transform: scale(0.98); }
+        .result-area { display: none; animation: fadeIn 0.5s ease; }
+        .result-char { font-size: 5rem; font-weight: bold; margin: 10px 0; line-height: 1; }
+        .result-char.wa { color: var(--wa-color); }
+        .result-char.ga { color: var(--ga-color); }
+        .result-char.zero { color: var(--zero-color); }
+        .conf-grid { margin: 24px 0; text-align: left; }
+        .conf-item { margin-bottom: 14px; }
+        .conf-label { font-size: 0.85rem; font-weight: bold; margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .conf-bar-bg { width: 100%; height: 10px; background: #eee; border-radius: 5px; overflow: hidden; }
+        .conf-bar { height: 100%; border-radius: 5px; transition: width 0.8s ease; }
+        .reason-text {
+            font-size: 0.9rem; color: #555; background: #f9f9f9;
+            padding: 15px; border-radius: 8px; margin-bottom: 20px;
+            text-align: left; line-height: 1.6; white-space: pre-line;
+        }
+        .restart-btn {
+            background: var(--primary); color: #fff; border: none;
+            padding: 12px 30px; border-radius: 8px; font-size: 1rem;
+            cursor: pointer; width: 100%;
+        }
+        .restart-btn:hover { opacity: 0.9; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="container" id="app">
+    <div id="quiz-stage">
+        <h1>は / が / 零助词 判定器</h1>
+        <p class="subtitle">根据语法经验方法逐步判定</p>
+        <div class="progress-dots" id="progress-dots"></div>
+        <div id="module-tag-container"></div>
+        <div class="question-card" id="question-text">准备开始...</div>
+        <div class="example-box" id="example-text" style="display:none;"></div>
+        <div class="options-grid" id="options-container"></div>
+    </div>
+
+    <div id="result-stage" class="result-area">
+        <h1>判定结果</h1>
+        <div class="result-char" id="result-char-display">は</div>
+        <div class="conf-grid">
+            <div class="conf-item">
+                <div class="conf-label"><span>は (Wa)</span><span id="wa-pct">0%</span></div>
+                <div class="conf-bar-bg"><div class="conf-bar" id="wa-bar" style="background:var(--wa-color);width:0%"></div></div>
+            </div>
+            <div class="conf-item">
+                <div class="conf-label"><span>が (Ga)</span><span id="ga-pct">0%</span></div>
+                <div class="conf-bar-bg"><div class="conf-bar" id="ga-bar" style="background:var(--ga-color);width:0%"></div></div>
+            </div>
+            <div class="conf-item">
+                <div class="conf-label"><span>零助词 (Zero)</span><span id="zero-pct">0%</span></div>
+                <div class="conf-bar-bg"><div class="conf-bar" id="zero-bar" style="background:var(--zero-color);width:0%"></div></div>
+            </div>
+        </div>
+        <div class="reason-text" id="reason-text"></div>
+        <button class="restart-btn" onclick="judgeApp.reset()">重新测试</button>
+    </div>
+</div>
+
+<script>
+const QUESTION_FLOW = [
+    // ==================== A. 硬性条件 ====================
+    {
+        id: 'a1_contrast', module: 'A-硬性', type: 'hard',
+        text: '句子中是否存在【对比】意味？\n（包括成对的「～は～は」，也包括单个「～は」暗含的对比）',
+        example: 'おじいさん<em>は</em>いますが、おばあさん<em>は</em>いません。<br>あの人は好きです。<em>（暗含：但其他人不一定）</em>',
+        options: [
+            { label: '✓ 有对比意味', action: 'wa', reason: 'A-1(a)：对比是「は」的专属功能，必须用「は」。' },
+            { label: '没有 / 不确定 →', action: 'next' }
+        ]
+    },
+    {
+        id: 'a1_topic', module: 'A-硬性', type: 'hard',
+        text: '是否在标记句子的【主题】？\n（由「を」「に」「で」等格助词替换为「は」来提示主题）',
+        example: 'コーヒー<em>は</em>飲みません。<em>（を→は）</em><br>ここ<em>は</em>静かです。<em>（ここでは→は）</em>',
+        options: [
+            { label: '✓ 是标记主题', action: 'wa', reason: 'A-1(b)：主题提示是「は」的核心功能。' },
+            { label: '不是 / 不确定 →', action: 'next' }
+        ]
+    },
+    {
+        id: 'a1_wa_ga_pattern', module: 'A-硬性', type: 'hard',
+        text: '是否为「～は～が」句型？\n（大主题用「は」，小主语用「が」，描述某事物的特征）',
+        example: '象<em>は</em>鼻<em>が</em>長い。<br>この工場<em>では</em>、最新技術<em>が</em>採用されている。',
+        options: [
+            { label: '✓ 是「～は～が」句型', action: 'wa_ga_pattern', reason: 'A-1(c)：「～は～が」句型中，大主题用「は」，小主语用「が」。' },
+            { label: '不是 / 不确定 →', action: 'next' }
+        ]
+    },
+    {
+        id: 'a1_adj_neg', module: 'A-硬性', type: 'hard',
+        text: '是否为「形容词连用形 + はない / はありません」的否定形式？',
+        example: '怖く<em>は</em>ない。<em>（不可怕）</em><br>面白く<em>は</em>ありません。<em>（没意思）</em>',
+        options: [
+            { label: '✓ 是这种否定形式', action: 'wa', reason: 'A-1(d)：形容词否定中「く」后必须用「は」来强调否定。' },
+            { label: '不是 / 不确定 →', action: 'next' }
+        ]
+    },
+    {
+        id: 'a1_unagi', module: 'A-硬性', type: 'hard',
+        text: '是否为「ウナギ文」（鳗鱼句）？\n（表面看主语和谓语不搭配，实际是省略了核心动作的名词谓语句）',
+        example: '私はうなぎです。<em>（我点的是鳗鱼）</em><br>お母さんは掃除です。<em>（妈妈负责打扫）</em>',
+        options: [
+            { label: '✓ 是鳗鱼句', action: 'wa', reason: 'A-1(e)：鳗鱼句中用「は」提示主题。' },
+            { label: '不是 / 不确定 →', action: 'next' }
+        ]
+    },
+    {
+        id: 'a2_question_word', module: 'A-硬性', type: 'hard',
+        text: '句子中是否包含【疑问词】（誰、何、どこ 等）？',
+        example: '<em>问：</em>誰<em>が</em>李さんですか。<br><em>答：</em>私<em>が</em>李さんです。<br>——疑问词在前，用「が」<br><br><em>问：</em>李さん<em>は</em>誰ですか。<br><em>答：</em>私<em>は</em>李さんです。<br>——疑问词在后，用「は」',
+        options: [
+            { label: '疑问词在前（问/答主语）', action: 'ga', reason: 'A-2：疑问词在前时，焦点在主语位置，必须用「が」。' },
+            { label: '疑问词在后（问/答谓语）', action: 'wa', reason: 'A-2：疑问词在后时，焦点在谓语位置，主语用「は」。' },
+            { label: '没有疑问词 / 不确定 →', action: 'next' }
+        ]
+    },
+    {
+        id: 'a3_subclause', module: 'A-硬性', type: 'hard',
+        text: '要判断的部分是否在【小句（从句）】中？\n（如「～ので」「～が」「～とき」等连接的小句内）\n※「と」引用句无此限制',
+        example: '娘<em>が</em>病気なので、私は会社を休みました。<br><em>（因为女儿生病了，所以我请了假）</em>',
+        options: [
+            { label: '✓ 在小句中', action: 'ga', reason: 'A-3：小句中的主语必须用「が」（「と」引用句除外）。' },
+            { label: '不在小句中 / 不确定 →', action: 'next' }
+        ]
+    },
+    // ==================== B. 语境条件 ====================
+    {
+        id: 'b1_emphasis', module: 'B-语境', type: 'context',
+        text: '你是否想要特意【强调】句子的某一部分？',
+        example: '<em>强调前面（主语）：</em>雨<em>が</em>降っている。<br><em>强调后面（谓语）：</em>雨<em>は</em>降っている。',
+        options: [
+            { label: '强调前面（主语部分）', action: 'ga', reason: 'B-1(a)：想要强调主语时，用「が」将焦点锁定在前。' },
+            { label: '强调后面（谓语部分）', action: 'wa', reason: 'B-1(b)：想要强调谓语时，用「は」将焦点引向后。' },
+            { label: '没有特别想强调的 →', action: 'next' }
+        ]
+    },
+    {
+        id: 'b2_exclusive', module: 'B-语境', type: 'context',
+        text: '是否想强调主语的【排他性】？\n（"只有这个才行" / "非它不可" 的含义）',
+        example: '私<em>が</em>終わらせてあげる。<br><em>（我来终结它。——隐含：只有我能做到）</em>',
+        options: [
+            { label: '✓ 有排他性强调', action: 'ga', reason: 'B-2：强调"只有这个主语才行"的排他性时，用「が」。' },
+            { label: '没有 / 不确定 →', action: 'next' }
+        ]
+    },
+    // ==================== C. 特例条件 ====================
+    {
+        id: 'c1_data', module: 'C-特例', type: 'special',
+        text: '句子是否涉及【数据 / 数值】的表述？',
+        example: '<em>以此为话题分析：</em>売上<em>は</em>前年比120%です。<br><em>只是罗列数据：</em>参加者<em>が</em>30人です。',
+        options: [
+            { label: '以数据为话题进行分析', action: 'wa', reason: 'C-1(a)：以数据为话题展开讨论时，倾向于用「は」。' },
+            { label: '只是罗列数据', action: 'ga', reason: 'C-1(b)：单纯报告/罗列数据时，倾向于用「が」。' },
+            { label: '不涉及数据 / 不确定 →', action: 'next' }
+        ]
+    },
+    {
+        id: 'c2_pronoun_colloquial', module: 'C-特例', type: 'special',
+        text: '是否为口语中【指着某物直接感叹】的场景？\n（前面是新信息，句子表达情感/评价）',
+        example: 'この花、美しい！<em>（这花，好美！）</em><br>これ、おいしい！<em>（这个，好吃！）</em>',
+        options: [
+            { label: '✓ 是口语感叹', action: 'zero', reason: 'C-2(a)：口语中指着新事物直接感叹时，通常用零助词。' },
+            { label: '不是 / 不确定 →', action: 'next' }
+        ]
+    },
+    {
+        id: 'c2_documentary', module: 'C-特例', type: 'special',
+        text: '是否为【纪录片式句式】？\n（"在某处有某物，这就是……"的引入模式）',
+        example: '浙江省の会稽山の麓に古い町があります<em>が</em>、これ<em>が</em>紹興です。',
+        options: [
+            { label: '✓ 是纪录片句式', action: 'ga', reason: 'C-2(b)：纪录片式引入句「～がありますが、これが～」中用「が」。' },
+            { label: '不是 / 不确定 →', action: 'next' }
+        ]
+    },
+    // ==================== D. 软性条件 ====================
+    {
+        id: 'd1_new_old', module: 'D-软性', type: 'soft',
+        text: '主语是【新信息】还是【旧信息】？\n（新信息 = 第一次提到 / 对方不知道的事物）',
+        example: '<em>新信息：</em>昨日、面白い映画を見ました。<br><em>旧信息：</em>その映画は面白かったです。',
+        options: [
+            { label: '主语是新信息', score: { wa: 0, ga: 2, zero: 0 } },
+            { label: '主语是旧信息', score: { wa: 2, ga: 0, zero: 0 } },
+            { label: '不确定', score: { wa: 0, ga: 0, zero: 0 } }
+        ]
+    },
+    {
+        id: 'd2_sentence_type', module: 'D-软性', type: 'soft',
+        text: '句子属于哪种类型？',
+        example: '<em>现象句：</em>雨<em>が</em>降っている。/ 子供たち<em>が</em>遊んでいる。<br><em>判断句/真理：</em>太陽<em>は</em>東から昇る。/ 雪<em>は</em>白い。',
+        options: [
+            { label: '现象句（观察/新发现）', score: { wa: 0, ga: 2, zero: 0 } },
+            { label: '判断句/真理/恒定属性', score: { wa: 2, ga: 0, zero: 0 } },
+            { label: '不确定', score: { wa: 0, ga: 0, zero: 0 } }
+        ]
+    },
+    {
+        id: 'd3_verb_type', module: 'D-软性', type: 'soft',
+        text: '谓语动词的类型是？',
+        example: '<em>非意志/存在：</em>雨<em>が</em>降る。/ おじいさん<em>が</em>いる。<br><em>能力/好恶/愿望：</em>あの人のこと<em>が</em>好きです。',
+        options: [
+            { label: '非意志动词 / 存在动词', score: { wa: 0, ga: 2, zero: 0 } },
+            { label: '能力/好恶/愿望/情感对象', score: { wa: 0, ga: 2, zero: 0 } },
+            { label: '普通意志动词 / 不确定', score: { wa: 1, ga: 0, zero: 0 } }
+        ]
+    },
+    {
+        id: 'd4_colloquial', module: 'D-软性', type: 'soft',
+        text: '语境的【正式程度】如何？',
+        example: '<em>口语：</em>私、もう行くね。<em>（零助词）</em><br><em>书面：</em>私は、もう参ります。',
+        options: [
+            { label: '口语/非正式场合', score: { wa: 0, ga: 0, zero: 2 } },
+            { label: '书面/正式场合', score: { wa: 1, ga: 0, zero: 0 } },
+            { label: '不确定', score: { wa: 0, ga: 0, zero: 0 } }
+        ]
+    }
+];
+
+class WaGaJudge {
+    constructor(flow) {
+        this.flow = flow;
+        this.currentIndex = 0;
+        this.scores = { wa: 0, ga: 0, zero: 0 };
+        this.dom = {
+            quizStage: document.getElementById('quiz-stage'),
+            resultStage: document.getElementById('result-stage'),
+            questionText: document.getElementById('question-text'),
+            exampleText: document.getElementById('example-text'),
+            optionsContainer: document.getElementById('options-container'),
+            moduleTag: document.getElementById('module-tag-container'),
+            progressDots: document.getElementById('progress-dots'),
+            resultChar: document.getElementById('result-char-display'),
+            reasonText: document.getElementById('reason-text'),
+            bars: {
+                wa: document.getElementById('wa-bar'),
+                ga: document.getElementById('ga-bar'),
+                zero: document.getElementById('zero-bar')
+            },
+            pcts: {
+                wa: document.getElementById('wa-pct'),
+                ga: document.getElementById('ga-pct'),
+                zero: document.getElementById('zero-pct')
+            }
+        };
+    }
+
+    start() {
+        this.currentIndex = 0;
+        this.scores = { wa: 0, ga: 0, zero: 0 };
+        this.dom.quizStage.style.display = 'block';
+        this.dom.resultStage.style.display = 'none';
+        this.renderProgress();
+        this.renderQuestion();
+    }
+
+    reset() { this.start(); }
+
+    renderProgress() {
+        this.dom.progressDots.innerHTML = '';
+        this.flow.forEach((_, i) => {
+            const dot = document.createElement('span');
+            dot.className = 'dot';
+            if (i < this.currentIndex) dot.classList.add('done');
+            else if (i === this.currentIndex) dot.classList.add('active');
+            this.dom.progressDots.appendChild(dot);
+        });
+    }
+
+    renderQuestion() {
+        if (this.currentIndex >= this.flow.length) {
+            this.calculateSoftResult();
+            return;
+        }
+        const q = this.flow[this.currentIndex];
+        this.renderProgress();
+
+        const tagMap = { 'A-硬性': 'hard', 'B-语境': 'context', 'C-特例': 'special', 'D-软性': 'soft' };
+        this.dom.moduleTag.innerHTML = `<span class="module-tag ${tagMap[q.module]}">${q.module}</span>`;
+        this.dom.questionText.innerText = q.text;
+
+        if (q.example) {
+            this.dom.exampleText.innerHTML = q.example;
+            this.dom.exampleText.style.display = 'block';
+        } else {
+            this.dom.exampleText.style.display = 'none';
+        }
+
+        this.dom.optionsContainer.innerHTML = '';
+        q.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'opt-btn';
+            btn.innerText = opt.label;
+            btn.onclick = () => this.handleAnswer(q, opt);
+            this.dom.optionsContainer.appendChild(btn);
+        });
+    }
+
+    handleAnswer(question, option) {
+        const isHardType = ['hard', 'context', 'special'].includes(question.type);
+
+        if (isHardType) {
+            if (option.action === 'next') {
+                this.currentIndex++;
+                this.renderQuestion();
+            } else if (option.action === 'wa_ga_pattern') {
+                this.showResult('PATTERN', { wa: 50, ga: 50, zero: 0 }, option.reason);
+            } else {
+                const finalScores = { wa: 0, ga: 0, zero: 0 };
+                finalScores[option.action] = 100;
+                this.showResult(option.action.toUpperCase(), finalScores, option.reason);
+            }
+            return;
+        }
+
+        if (question.type === 'soft' && option.score) {
+            this.scores.wa += option.score.wa || 0;
+            this.scores.ga += option.score.ga || 0;
+            this.scores.zero += option.score.zero || 0;
+        }
+
+        this.currentIndex++;
+        this.renderQuestion();
+    }
+
+    calculateSoftResult() {
+        const wa = this.scores.wa;
+        const ga = this.scores.ga;
+        const zero = this.scores.zero;
+        const total = wa + ga + zero;
+        
+        let result;
+        let pcts = { wa: 0, ga: 0, zero: 0 };
+        let reason = '';
+
+        if (total === 0) {
+            result = 'WA';
+            pcts = { wa: 50, ga: 25, zero: 25 };
+            reason = 'D-4 兜底：没有命中任何条件。\n作为默认选择，陈述句主语倾向于使用「は」。\n口语中也可使用零助词。';
+        } else {
+            pcts.wa = Math.round((wa / total) * 100);
+            pcts.ga = Math.round((ga / total) * 100);
+            pcts.zero = 100 - pcts.wa - pcts.ga;
+
+            const entries = Object.entries(this.scores);
+            entries.sort((a, b) => b[1] - a[1]);
+            const winner = entries[0][0];
+            result = winner.toUpperCase();
+
+            const scoreStr = `は(${wa}) / が(${ga}) / 零(${zero})`;
+            if (winner === 'wa') reason = `D 软性综合判定 [${scoreStr}]\n语境倾向于主题提示、旧信息或普遍陈述 → 「は」`;
+            else if (winner === 'ga') reason = `D 软性综合判定 [${scoreStr}]\n语境倾向于新信息、现象描写或能力/情感对象 → 「が」`;
+            else reason = `D 软性综合判定 [${scoreStr}]\n语境倾向于口语省略 → 零助词`;
+        }
+
+        this.showResult(result, pcts, reason);
+    }
+
+    showResult(result, pcts, reason) {
+        this.dom.quizStage.style.display = 'none';
+        this.dom.resultStage.style.display = 'block';
+
+        const charMap = { 'WA': 'は', 'GA': 'が', 'ZERO': '∅', 'PATTERN': 'は が' };
+        this.dom.resultChar.innerText = charMap[result];
+        this.dom.resultChar.className = 'result-char ' + (result === 'PATTERN' ? '' : result.toLowerCase());
+        
+        if (result === 'PATTERN') {
+            this.dom.resultChar.style.fontSize = '3rem';
+            this.dom.resultChar.innerHTML = '<span style="color:var(--wa-color)">は</span> <span style="color:var(--ga-color)">が</span>';
+        } else {
+            this.dom.resultChar.style.fontSize = '5rem';
+        }
+
+        ['wa', 'ga', 'zero'].forEach(key => {
+            this.dom.bars[key].style.width = `${pcts[key]}%`;
+            this.dom.pcts[key].innerText = `${pcts[key]}%`;
+        });
+
+        this.dom.reasonText.innerText = reason;
+    }
+}
+
+const judgeApp = new WaGaJudge(QUESTION_FLOW);
+window.onload = () => judgeApp.start();
+</script>
+</body>
+</html>
