@@ -128,7 +128,7 @@ const QUESTION_FLOW = [
     {
         id: 'a1_contrast', module: 'A-硬性', type: 'hard',
         text: '句子中是否存在【对比】含义？\n（包括成对的「～は～は」，也包括单个「～は」暗含的对比）',
-        example: 'おじいさん<em>は</em>いますが、おばあさん<em>は</em>いません。<br>あの人は好きです。<em>（暗含：但其他人不一定）</em>',
+        example: 'おじいさん<em>は</em>いますが、おばあさん<em>は</em>いません。<br>あの人<em>は</em>好きです。<em>（暗含：但其他人不一定）</em>',
         options: [
             { label: '✓ 有对比含义', action: 'wa', reason: 'A-1(a)：对比是「は」的专属功能，必须用「は」。' },
             { label: '× 没有', action: 'next' }
