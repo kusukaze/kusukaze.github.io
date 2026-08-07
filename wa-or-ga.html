@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>は / が / 零助词 智能判定器</title>
+    <title>は / が 判断器</title>
     <style>
         :root {
-            --primary: #e74c3c;
-            --primary-light: #fce4ec;
+            --primary: #27ae60;
+            --primary-light: #eafaf1;
             --bg: #f5f5f5;
             --card-bg: #ffffff;
             --text: #333333;
             --text-light: #777777;
-            --wa-color: #e74c3c;
+            --wa-color: #e67e22;
             --ga-color: #2980b9;
             --zero-color: #8e44ad;
         }
@@ -39,10 +39,10 @@
             padding: 2px 10px; border-radius: 20px; margin-bottom: 10px;
             color: #fff; letter-spacing: 1px;
         }
-        .module-tag.hard { background: #e74c3c; }
-        .module-tag.context { background: #e67e22; }
+        .module-tag.hard    { background: #c0392b; }
+        .module-tag.context { background: #d35400; }
         .module-tag.special { background: #8e44ad; }
-        .module-tag.soft { background: #27ae60; }
+        .module-tag.soft    { background: #27ae60; }
         .question-card {
             background: var(--primary-light); padding: 18px 20px; border-radius: 12px;
             margin-bottom: 8px; min-height: 50px;
@@ -61,7 +61,7 @@
             border-radius: 10px; font-size: 0.95rem; cursor: pointer;
             transition: all 0.2s; color: var(--text); text-align: left; line-height: 1.4;
         }
-        .opt-btn:hover { border-color: var(--primary); background: #fff5f5; }
+        .opt-btn:hover { border-color: var(--primary); var(--primary-light); }
         .opt-btn:active { transform: scale(0.98); }
         .result-area { display: none; animation: fadeIn 0.5s ease; }
         .result-char { font-size: 5rem; font-weight: bold; margin: 10px 0; line-height: 1; }
@@ -91,7 +91,7 @@
 
 <div class="container" id="app">
     <div id="quiz-stage">
-        <h1>は / が / 零助词 判定器</h1>
+        <h1>は / が 判断器</h1>
         <p class="subtitle">根据语法经验方法逐步判定</p>
         <div class="progress-dots" id="progress-dots"></div>
         <div id="module-tag-container"></div>
@@ -127,20 +127,20 @@ const QUESTION_FLOW = [
     // ==================== A. 硬性条件 ====================
     {
         id: 'a1_contrast', module: 'A-硬性', type: 'hard',
-        text: '句子中是否存在【对比】意味？\n（包括成对的「～は～は」，也包括单个「～は」暗含的对比）',
+        text: '句子中是否存在【对比】含义？\n（包括成对的「～は～は」，也包括单个「～は」暗含的对比）',
         example: 'おじいさん<em>は</em>いますが、おばあさん<em>は</em>いません。<br>あの人は好きです。<em>（暗含：但其他人不一定）</em>',
         options: [
-            { label: '✓ 有对比意味', action: 'wa', reason: 'A-1(a)：对比是「は」的专属功能，必须用「は」。' },
-            { label: '没有 / 不确定 →', action: 'next' }
+            { label: '✓ 有对比含义', action: 'wa', reason: 'A-1(a)：对比是「は」的专属功能，必须用「は」。' },
+            { label: '× 没有', action: 'next' }
         ]
     },
     {
         id: 'a1_topic', module: 'A-硬性', type: 'hard',
-        text: '是否在标记句子的【主题】？\n（由「を」「に」「で」等格助词替换为「は」来提示主题）',
-        example: 'コーヒー<em>は</em>飲みません。<em>（を→は）</em><br>ここ<em>は</em>静かです。<em>（ここでは→は）</em>',
+        text: '是否顶替了其他助词？',
+        example: 'コーヒー<em>は</em>飲みません。<em>（を→は）</em>',
         options: [
-            { label: '✓ 是标记主题', action: 'wa', reason: 'A-1(b)：主题提示是「は」的核心功能。' },
-            { label: '不是 / 不确定 →', action: 'next' }
+            { label: '✓ 顶替了其他助词', action: 'wa', reason: 'A-1(b)：主题提示是「は」的核心功能。' },
+            { label: '× 没有', action: 'next' }
         ]
     },
     {
@@ -148,8 +148,9 @@ const QUESTION_FLOW = [
         text: '是否为「～は～が」句型？\n（大主题用「は」，小主语用「が」，描述某事物的特征）',
         example: '象<em>は</em>鼻<em>が</em>長い。<br>この工場<em>では</em>、最新技術<em>が</em>採用されている。',
         options: [
-            { label: '✓ 是「～は～が」句型', action: 'wa_ga_pattern', reason: 'A-1(c)：「～は～が」句型中，大主题用「は」，小主语用「が」。' },
-            { label: '不是 / 不确定 →', action: 'next' }
+            { label: '✓ 是「～は～が」句型，且助词表示大主题', action: 'wa', reason: 'A-1(c)：「～は～が」句型中，大主题用「は」，小主语用「が」。' },
+            { label: '✓ 是「～は～が」句型，且助词表示小主语', action: 'ga', reason: 'A-1(c)：「～は～が」句型中，大主题用「は」，小主语用「が」。' },
+            { label: '× 不是', action: 'next' }
         ]
     },
     {
@@ -158,7 +159,7 @@ const QUESTION_FLOW = [
         example: '怖く<em>は</em>ない。<em>（不可怕）</em><br>面白く<em>は</em>ありません。<em>（没意思）</em>',
         options: [
             { label: '✓ 是这种否定形式', action: 'wa', reason: 'A-1(d)：形容词否定中「く」后必须用「は」来强调否定。' },
-            { label: '不是 / 不确定 →', action: 'next' }
+            { label: '× 不是', action: 'next' }
         ]
     },
     {
@@ -167,7 +168,7 @@ const QUESTION_FLOW = [
         example: '私はうなぎです。<em>（我点的是鳗鱼）</em><br>お母さんは掃除です。<em>（妈妈负责打扫）</em>',
         options: [
             { label: '✓ 是鳗鱼句', action: 'wa', reason: 'A-1(e)：鳗鱼句中用「は」提示主题。' },
-            { label: '不是 / 不确定 →', action: 'next' }
+            { label: '× 不是', action: 'next' }
         ]
     },
     {
@@ -175,9 +176,9 @@ const QUESTION_FLOW = [
         text: '句子中是否包含【疑问词】（誰、何、どこ 等）？',
         example: '<em>问：</em>誰<em>が</em>李さんですか。<br><em>答：</em>私<em>が</em>李さんです。<br>——疑问词在前，用「が」<br><br><em>问：</em>李さん<em>は</em>誰ですか。<br><em>答：</em>私<em>は</em>李さんです。<br>——疑问词在后，用「は」',
         options: [
-            { label: '疑问词在前（问/答主语）', action: 'ga', reason: 'A-2：疑问词在前时，焦点在主语位置，必须用「が」。' },
-            { label: '疑问词在后（问/答谓语）', action: 'wa', reason: 'A-2：疑问词在后时，焦点在谓语位置，主语用「は」。' },
-            { label: '没有疑问词 / 不确定 →', action: 'next' }
+            { label: '✓ 疑问词在前（或该问句的答句）', action: 'ga', reason: 'A-2：疑问词在前时，焦点在主语位置，必须用「が」。' },
+            { label: '✓ 疑问词在后（或该问句的答句）', action: 'wa', reason: 'A-2：疑问词在后时，焦点在谓语位置，主语用「は」。' },
+            { label: '× 没有疑问词', action: 'next' }
         ]
     },
     {
@@ -186,8 +187,8 @@ const QUESTION_FLOW = [
         example: '娘<em>が</em>病気なので、私は会社を休みました。<br><em>（因为女儿生病了，所以我请了假）</em>',
         options: [
             { label: '✓ 在小句中，且小句不由と引导', action: 'ga', reason: 'A-3：小句中的主语必须用「が」（「と」引用句除外）。' },
-            { label: '在小句中，但小句由と引导 →', action: 'next' },
-            { label: '不在小句中 / 不确定 →', action: 'next' }
+            { label: '✓ 在小句中，但小句由と引导', action: 'next' },
+            { label: '× 不在小句中', action: 'next' }
         ]
     },
     // ==================== B. 语境条件 ====================
@@ -196,9 +197,9 @@ const QUESTION_FLOW = [
         text: '你是否想要特意【强调】句子的某一部分？',
         example: '<em>强调前面（主语）：</em>雨<em>が</em>降っている。<br><em>强调后面（谓语）：</em>雨<em>は</em>降っている。',
         options: [
-            { label: '强调前面（主语部分）', action: 'ga', reason: 'B-1(a)：想要强调主语时，用「が」将焦点锁定在前。' },
-            { label: '强调后面（谓语部分）', action: 'wa', reason: 'B-1(b)：想要强调谓语时，用「は」将焦点引向后。' },
-            { label: '没有特别想强调的 →', action: 'next' }
+            { label: '✓ 强调前面（主语部分）', action: 'ga', reason: 'B-1(a)：想要强调主语时，用「が」将焦点锁定在前。' },
+            { label: '✓ 强调后面（谓语部分）', action: 'wa', reason: 'B-1(b)：想要强调谓语时，用「は」将焦点引向后。' },
+            { label: '× 没有特别想强调的', action: 'next' }
         ]
     },
     {
@@ -207,7 +208,7 @@ const QUESTION_FLOW = [
         example: '私<em>が</em>終わらせてあげる。<br><em>（我来终结它。——隐含：只有我能做到）</em>',
         options: [
             { label: '✓ 有排他性强调', action: 'ga', reason: 'B-2：强调"只有这个主语才行"的排他性时，用「が」。' },
-            { label: '没有 / 不确定 →', action: 'next' }
+            { label: '× 没有', action: 'next' }
         ]
     },
     // ==================== C. 特例条件 ====================
@@ -216,9 +217,9 @@ const QUESTION_FLOW = [
         text: '句子是否涉及【数据 / 数值】的表述？',
         example: '<em>以此为话题分析：</em>売上<em>は</em>前年比120%です。<br><em>只是罗列数据：</em>参加者<em>が</em>30人です。',
         options: [
-            { label: '以数据为话题进行分析', action: 'wa', reason: 'C-1(a)：以数据为话题展开讨论时，倾向于用「は」。' },
-            { label: '只是罗列数据', action: 'ga', reason: 'C-1(b)：单纯报告/罗列数据时，倾向于用「が」。' },
-            { label: '不涉及数据 / 不确定 →', action: 'next' }
+            { label: '✓ 以数据为话题进行分析', action: 'wa', reason: 'C-1(a)：以数据为话题展开讨论时，倾向于用「は」。' },
+            { label: '✓ 只是罗列数据', action: 'ga', reason: 'C-1(b)：单纯报告/罗列数据时，倾向于用「が」。' },
+            { label: '× 不涉及数据', action: 'next' }
         ]
     },
     {
@@ -227,16 +228,16 @@ const QUESTION_FLOW = [
         example: 'この花、美しい！<em>（这花，好美！）</em><br>これ、おいしい！<em>（这个，好吃！）</em>',
         options: [
             { label: '✓ 是口语感叹', action: 'zero', reason: 'C-2(a)：口语中指着新事物直接感叹时，通常用零助词。' },
-            { label: '不是 / 不确定 →', action: 'next' }
+            { label: '× 不是', action: 'next' }
         ]
     },
     {
         id: 'c2_documentary', module: 'C-特例', type: 'special',
         text: '是否为【纪录片式句式】？\n（"在某处有某物，这就是……"的引入模式）',
-        example: '浙江省の会稽山の麓に古い町があります<em>が</em>、これ<em>が</em>紹興です。',
+        example: '浙江省の会稽山の麓に古い町がありますが、これ<em>が</em>紹興です。',
         options: [
             { label: '✓ 是纪录片句式', action: 'ga', reason: 'C-2(b)：纪录片式引入句「～がありますが、これが～」中用「が」。' },
-            { label: '不是 / 不确定 →', action: 'next' }
+            { label: '× 不是', action: 'next' }
         ]
     },
     // ==================== D. 软性条件 ====================
@@ -245,9 +246,9 @@ const QUESTION_FLOW = [
         text: '主语是【新信息】还是【旧信息】？\n（新信息 = 第一次提到 / 对方不知道的事物）',
         example: '<em>新信息：</em>昨日、面白い映画を見ました。<br><em>旧信息：</em>その映画は面白かったです。',
         options: [
-            { label: '主语是新信息', score: { wa: 0, ga: 2, zero: 0 } },
-            { label: '主语是旧信息', score: { wa: 2, ga: 0, zero: 0 } },
-            { label: '不确定', score: { wa: 0, ga: 0, zero: 0 } }
+            { label: '✓ 主语是新信息', score: { wa: 0, ga: 2, zero: 0 } },
+            { label: '✓ 主语是旧信息', score: { wa: 2, ga: 0, zero: 0 } },
+            { label: '× 不确定', score: { wa: 0, ga: 0, zero: 0 } }
         ]
     },
     {
@@ -255,9 +256,9 @@ const QUESTION_FLOW = [
         text: '句子属于哪种类型？',
         example: '<em>现象句：</em>雨<em>が</em>降っている。/ 子供たち<em>が</em>遊んでいる。<br><em>判断句/真理：</em>太陽<em>は</em>東から昇る。/ 雪<em>は</em>白い。',
         options: [
-            { label: '现象句（观察/新发现）', score: { wa: 0, ga: 2, zero: 0 } },
-            { label: '判断句/真理/恒定属性', score: { wa: 2, ga: 0, zero: 0 } },
-            { label: '不确定', score: { wa: 0, ga: 0, zero: 0 } }
+            { label: '✓ 现象句（观察/新发现）', score: { wa: 0, ga: 2, zero: 0 } },
+            { label: '✓ 判断句/真理/恒定属性', score: { wa: 2, ga: 0, zero: 0 } },
+            { label: '× 不确定', score: { wa: 0, ga: 0, zero: 0 } }
         ]
     },
     {
@@ -265,9 +266,9 @@ const QUESTION_FLOW = [
         text: '谓语动词的类型是？',
         example: '<em>非意志/存在：</em>雨<em>が</em>降る。/ おじいさん<em>が</em>いる。<br><em>能力/好恶/愿望：</em>あの人のこと<em>が</em>好きです。',
         options: [
-            { label: '非意志动词 / 存在动词', score: { wa: 0, ga: 2, zero: 0 } },
-            { label: '能力/好恶/愿望/情感对象', score: { wa: 0, ga: 2, zero: 0 } },
-            { label: '普通意志动词 / 不确定', score: { wa: 1, ga: 0, zero: 0 } }
+            { label: '✓ 非意志动词 / 存在动词', score: { wa: 0, ga: 2, zero: 0 } },
+            { label: '✓ 能力/好恶/愿望/情感对象', score: { wa: 0, ga: 2, zero: 0 } },
+            { label: '× 其他动词', score: { wa: 1, ga: 0, zero: 0 } }
         ]
     },
     {
@@ -275,9 +276,9 @@ const QUESTION_FLOW = [
         text: '语境的【正式程度】如何？',
         example: '<em>口语：</em>私、もう行くね。<em>（零助词）</em><br><em>书面：</em>私は、もう参ります。',
         options: [
-            { label: '口语/非正式场合', score: { wa: 0, ga: 0, zero: 2 } },
-            { label: '书面/正式场合', score: { wa: 1, ga: 0, zero: 0 } },
-            { label: '不确定', score: { wa: 0, ga: 0, zero: 0 } }
+            { label: '✓ 口语/非正式场合', score: { wa: 0, ga: 0, zero: 2 } },
+            { label: '✓ 书面/正式场合', score: { wa: 1, ga: 0, zero: 0 } },
+            { label: '× 不确定', score: { wa: 0, ga: 0, zero: 0 } }
         ]
     }
 ];
@@ -312,7 +313,7 @@ class WaGaJudge {
 
     start() {
         this.currentIndex = 0;
-        this.scores = { wa: 0, ga: 0, zero: 0 };
+        this.scores = { wa: 1, ga: 1, zero: 1 };
         this.dom.quizStage.style.display = 'block';
         this.dom.resultStage.style.display = 'none';
         this.renderProgress();
