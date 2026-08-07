@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>五十音图</title>
+    <style>
+        :root {
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --text-sub: #7f8c8d;
+            --border-color: #bdc3c7;
+            --accent-color: #3498db;
+            --selected-bg: #2ecc71; /* 选中后的绿色 */
+            --selected-text: #ffffff;
+            --cell-size: min(18vw, 100px); /* 响应式正方形大小 */
+        }
+
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        h1 {
+            color: var(--text-main);
+            margin-bottom: 10px;
+        }
+
+        /* 控制开关样式 */
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .switch-label {
+            font-weight: bold;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+
+        /* Toggle Switch UI */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--accent-color); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        /* 表格容器 */
+        .kana-grid {
+            display: grid;
+            /* 5列布局 (a, i, u, e, o) */
+            grid-template-columns: repeat(5, var(--cell-size));
+            gap: 8px;
+            max-width: 100%;
+        }
+
+        /* 单个格子样式 */
+        .cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        .cell:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            border-color: var(--accent-color);
+        }
+
+        /* 选中状态 */
+        .cell.active {
+            background-color: var(--selected-bg);
+            border-color: var(--selected-bg);
+            color: var(--selected-text);
+        }
+        .cell.active .romaji,
+        .cell.active .index {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* 内部排版 */
+        .index {
+            position: absolute;
+            top: 4px;
+            left: 6px;
+            font-size: 0.7em;
+            color: var(--text-sub);
+            font-weight: bold;
+        }
+
+        .char {
+            font-size: 2em;
+            font-weight: 500;
+            line-height: 1;
+        }
+
+        .romaji {
+            margin-top: 4px;
+            font-size: 0.8em;
+            color: var(--text-sub);
+            text-transform: lowercase;
+        }
+
+        /* 空位处理 (例如 yi, ye, wu 等) */
+        .cell.empty {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+    </style>
+</head>
+<body>
+
+<h1>五十音图</h1>
+
+<div class="controls">
+    <span class="switch-label">平假名</span>
+    <label class="switch">
+        <input type="checkbox" id="kanaToggle">
+        <span class="slider"></span>
+    </label>
+    <span class="switch-label">片假名</span>
+</div>
+
+<div class="kana-grid" id="gridContainer">
+    <!-- JS将在这里生成内容 -->
+</div>
+
+<script>
+    // 数据结构：包含罗马音，平假名，片假名
+    // null 表示该位置为空（如 yi, wu, ye 等现代日语不使用的音节）
+    const kanaData = [
+        // Row A
+        { r: 'a', h: 'あ', k: 'ア' }, { r: 'i', h: 'い', k: 'イ' }, { r: 'u', h: 'う', k: 'ウ' }, { r: 'e', h: 'え', k: 'エ' }, { r: 'o', h: 'お', k: 'オ' },
+        // Row K
+        { r: 'ka', h: 'か', k: 'カ' }, { r: 'ki', h: 'き', k: 'キ' }, { r: 'ku', h: 'く', k: 'ク' }, { r: 'ke', h: 'け', k: 'ケ' }, { r: 'ko', h: 'こ', k: 'コ' },
+        // Row S
+        { r: 'sa', h: 'さ', k: 'サ' }, { r: 'shi', h: 'し', k: 'シ' }, { r: 'su', h: 'す', k: 'ス' }, { r: 'se', h: 'せ', k: 'セ' }, { r: 'so', h: 'そ', k: 'ソ' },
+        // Row T
+        { r: 'ta', h: 'た', k: 'タ' }, { r: 'chi', h: 'ち', k: 'チ' }, { r: 'tsu', h: 'つ', k: 'ツ' }, { r: 'te', h: 'て', k: 'テ' }, { r: 'to', h: 'と', k: 'ト' },
+        // Row N
+        { r: 'na', h: 'な', k: 'ナ' }, { r: 'ni', h: 'に', k: 'ニ' }, { r: 'nu', h: 'ぬ', k: 'ヌ' }, { r: 'ne', h: 'ね', k: 'ネ' }, { r: 'no', h: 'の', k: 'ノ' },
+        // Row H
+        { r: 'ha', h: 'は', k: 'ハ' }, { r: 'hi', h: 'ひ', k: 'ヒ' }, { r: 'fu', h: 'ふ', k: 'フ' }, { r: 'he', h: 'へ', k: 'ヘ' }, { r: 'ho', h: 'ほ', k: 'ホ' },
+        // Row M
+        { r: 'ma', h: 'ま', k: 'マ' }, { r: 'mi', h: 'み', k: 'ミ' }, { r: 'mu', h: 'む', k: 'ム' }, { r: 'me', h: 'め', k: 'メ' }, { r: 'mo', h: 'も', k: 'モ' },
+        // Row Y
+        { r: 'ya', h: 'や', k: 'ヤ' }, null, { r: 'yu', h: 'ゆ', k: 'ユ' }, null, { r: 'yo', h: 'よ', k: 'ヨ' },
+        // Row R
+        { r: 'ra', h: 'ら', k: 'ラ' }, { r: 'ri', h: 'り', k: 'リ' }, { r: 'ru', h: 'る', k: 'ル' }, { r: 're', h: 'れ', k: 'レ' }, { r: 'ro', h: 'ろ', k: 'ロ' },
+        // Row W
+        { r: 'wa', h: 'わ', k: 'ワ' }, null, null, null, { r: 'wo', h: 'を', k: 'ヲ' },
+        // Row N (Final)
+        { r: 'n', h: 'ん', k: 'ン' }
+    ];
+
+    const gridContainer = document.getElementById('gridContainer');
+    const toggleInput = document.getElementById('kanaToggle');
+
+    // 当前是否显示片假名 (false = 平假名, true = 片假名)
+    let isKatakana = false;
+    // 计数器，用于生成左上角的序号
+    let sequenceCounter = 1;
+
+    function renderGrid() {
+        gridContainer.innerHTML = '';
+        sequenceCounter = 1; // 重置序号
+
+        kanaData.forEach((item) => {
+            const cell = document.createElement('div');
+
+            if (!item) {
+                // 如果是空位（如 yi, wu），创建一个不可见的占位符保持网格对齐
+                cell.className = 'cell empty';
+            } else {
+                cell.className = 'cell';
+
+                // 1. 左上角序号
+                const indexSpan = document.createElement('span');
+                indexSpan.className = 'index';
+                indexSpan.textContent = sequenceCounter;
+
+                // 2. 中间假名
+                const charDiv = document.createElement('div');
+                charDiv.className = 'char';
+                charDiv.textContent = isKatakana ? item.k : item.h;
+
+                // 3. 下方罗马音
+                const romajiDiv = document.createElement('div');
+                romajiDiv.className = 'romaji';
+                romajiDiv.textContent = item.r;
+
+                // 组装
+                cell.appendChild(indexSpan);
+                cell.appendChild(charDiv);
+                cell.appendChild(romajiDiv);
+
+                // 点击事件：切换颜色
+                cell.addEventListener('click', () => {
+                    cell.classList.toggle('active');
+                });
+
+                sequenceCounter++;
+            }
+            gridContainer.appendChild(cell);
+        });
+    }
+
+    // 监听开关变化
+    toggleInput.addEventListener('change', (e) => {
+        isKatakana = e.target.checked;
+        renderGrid();
+    });
+
+    // 初始化渲染
+    renderGrid();
+
+</script>
+
+</body>
+</html>
