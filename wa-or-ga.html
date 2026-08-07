@@ -183,7 +183,7 @@ const QUESTION_FLOW = [
     },
     {
         id: 'a3_subclause', module: 'A-硬性', type: 'hard',
-        text: '要判断的部分是否在【小句（从句）】中？\n（如「～ので」「～が」「～とき」等连接的小句内）\n※「と」引用句无此限制',
+        text: '要判断的部分是否在【小句（从句）】中？\n（如「～ので」「～が」「～とき」等连接的小句内）',
         example: '娘<em>が</em>病気なので、私は会社を休みました。<br><em>（因为女儿生病了，所以我请了假）</em>',
         options: [
             { label: '✓ 在小句中，且小句不由と引导', action: 'ga', reason: 'A-3：小句中的主语必须用「が」（「と」引用句除外）。' },
@@ -205,7 +205,7 @@ const QUESTION_FLOW = [
     {
         id: 'b2_exclusive', module: 'B-语境', type: 'context',
         text: '是否想强调主语的【排他性】？\n（"只有这个才行" / "非它不可" 的含义）',
-        example: '私<em>が</em>終わらせてあげる。<br><em>（我来终结它。——隐含：只有我能做到）</em>',
+        example: '私<em>が</em>終わらせてあげる。<br><em>（我来终结它。——隐含：只有我能做到）</em><br>私<em>が</em>天才です。<br><em>（我才是天才。——隐含：其他人都不是）</em>',
         options: [
             { label: '✓ 有排他性强调', action: 'ga', reason: 'B-2：强调"只有这个主语才行"的排他性时，用「が」。' },
             { label: '× 没有', action: 'next' }
@@ -219,7 +219,7 @@ const QUESTION_FLOW = [
         options: [
             { label: '✓ 以数据为话题进行分析', action: 'wa', reason: 'C-1(a)：以数据为话题展开讨论时，倾向于用「は」。' },
             { label: '✓ 只是罗列数据', action: 'ga', reason: 'C-1(b)：单纯报告/罗列数据时，倾向于用「が」。' },
-            { label: '× 不涉及数据', action: 'next' }
+            { label: '× 不涉及数据 / 不确定', action: 'next' }
         ]
     },
     {
@@ -258,7 +258,7 @@ const QUESTION_FLOW = [
         options: [
             { label: '✓ 现象句（观察/新发现）', score: { wa: 0, ga: 2, zero: 0 } },
             { label: '✓ 判断句/真理/恒定属性', score: { wa: 2, ga: 0, zero: 0 } },
-            { label: '× 不确定', score: { wa: 0, ga: 0, zero: 0 } }
+            { label: '× 都不是', score: { wa: 0, ga: 0, zero: 0 } }
         ]
     },
     {
