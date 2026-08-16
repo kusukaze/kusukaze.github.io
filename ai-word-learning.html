@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌸 日语单词学习</title>
+    <style>
+  :root {
+    --primary: #e74c6f;
+    --primary-light: #fce4ec;
+    --bg: #faf5f0;
+    --card: #ffffff;
+    --text: #2d2d2d;
+    --text-light: #777;
+    --border: #e8e0d8;
+    --shadow: 0 4px 20px rgba(0,0,0,0.06);
+    --radius: 14px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "Hiragino Sans", sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+  }
+  .header {
+    background: linear-gradient(135deg, #e74c6f 0%, #f06292 50%, #ce93d8 100%);
+    color: white; padding: 32px 20px 28px; text-align: center;
+    position: relative; overflow: hidden;
+  }
+  .header::before {
+    content: "🌸"; position: absolute; font-size: 120px; opacity: 0.1; top: -20px; right: -10px;
+  }
+  .header h1 { font-size: 28px; font-weight: 700; letter-spacing: 2px; }
+  .header p { font-size: 14px; opacity: 0.85; margin-top: 6px; }
+  .container { max-width: 680px; margin: 0 auto; padding: 20px 16px 60px; }
+  .settings-toggle { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+  .settings-toggle button {
+    background: var(--card); border: 1px solid var(--border); border-radius: 20px;
+    padding: 6px 16px; font-size: 13px; cursor: pointer; color: var(--text-light); transition: all 0.2s;
+  }
+  .settings-toggle button:hover { border-color: var(--primary); color: var(--primary); }
+  .config-panel {
+    background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 28px 24px; margin-bottom: 20px; border: 1px solid var(--border); display: none;
+  }
+  .config-panel.active { display: block; }
+  .config-panel h2 { font-size: 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .form-group { margin-bottom: 18px; }
+  .form-group label {
+    display: block; font-size: 13px; font-weight: 600; color: var(--text-light);
+    margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .form-group input {
+    width: 100%; padding: 12px 16px; border: 2px solid var(--border); border-radius: 10px;
+    font-size: 14px; transition: border-color 0.2s; background: #fafafa;
+    font-family: "SF Mono", "Fira Code", monospace;
+  }
+  .form-group input:focus { outline: none; border-color: var(--primary); background: white; }
+  .btn-save {
+    background: linear-gradient(135deg, #e74c6f, #f06292); color: white; border: none;
+    padding: 12px 32px; border-radius: 10px; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; width: 100%;
+  }
+  .btn-save:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(231,76,111,0.35); }
+  .btn-save:active { transform: scale(0.98); }
+  .search-box {
+    background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 24px; margin-bottom: 24px; border: 1px solid var(--border);
+  }
+  .search-input-wrap { display: flex; gap: 10px; }
+  .search-input-wrap input {
+    flex: 1; padding: 14px 18px; border: 2px solid var(--border); border-radius: 12px;
+    font-size: 18px; transition: border-color 0.2s;
+  }
+  .search-input-wrap input:focus { outline: none; border-color: var(--primary); }
+  .search-input-wrap input::placeholder { color: #ccc; }
+  .btn-search {
+    background: linear-gradient(135deg, #e74c6f, #f06292); color: white; border: none;
+    padding: 14px 24px; border-radius: 12px; font-size: 16px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .btn-search:hover { box-shadow: 0 6px 20px rgba(231,76,111,0.35); }
+  .btn-search:disabled { opacity: 0.6; cursor: not-allowed; }
+  .quick-tags { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .quick-tags span {
+    background: var(--primary-light); color: var(--primary); padding: 5px 14px;
+    border-radius: 20px; font-size: 13px; cursor: pointer; transition: all 0.15s; border: 1px solid transparent;
+  }
+  .quick-tags span:hover { background: var(--primary); color: white; }
+  .random-section { margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border); }
+  .random-section .label {
+    font-size: 12px; color: var(--text-light); margin-bottom: 10px;
+    text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;
+  }
+  .random-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .btn-random {
+    background: var(--card); border: 2px solid var(--border); border-radius: 10px;
+    padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; color: var(--text); display: flex; align-items: center; gap: 5px;
+  }
+  .btn-random:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+  .btn-random:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-random.n5 { border-color: #a5d6a7; color: #2e7d32; }
+  .btn-random.n5:hover { background: #e8f5e9; }
+  .btn-random.n4 { border-color: #90caf9; color: #1565c0; }
+  .btn-random.n4:hover { background: #e3f2fd; }
+  .btn-random.n3 { border-color: #fff176; color: #f57f17; }
+  .btn-random.n3:hover { background: #fffde7; }
+  .btn-random.n2 { border-color: #ffab91; color: #d84315; }
+  .btn-random.n2:hover { background: #fbe9e7; }
+  .btn-random.n1 { border-color: #ce93d8; color: #7b1fa2; }
+  .btn-random.n1:hover { background: #f3e5f5; }
+  .btn-random.all { border-color: var(--primary); color: var(--primary); }
+  .btn-random.all:hover { background: var(--primary-light); }
+  .result-area { display: none; }
+  .result-area.active { display: block; }
+  .loading { text-align: center; padding: 60px 20px; }
+  .loading .spinner {
+    width: 48px; height: 48px; border: 4px solid var(--border); border-top-color: var(--primary);
+    border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading p { color: var(--text-light); font-size: 14px; }
+  .result-card {
+    background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+    border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px;
+  }
+  .word-header {
+    background: linear-gradient(135deg, #fce4ec, #f3e5f5); padding: 28px 24px;
+    text-align: center; border-bottom: 1px solid var(--border);
+  }
+  .word-header .kana { font-size: 14px; color: var(--primary); margin-bottom: 4px; font-weight: 500; }
+  .word-header .word { font-size: 42px; font-weight: 700; color: var(--text); letter-spacing: 4px; }
+  .word-header .romaji { font-size: 13px; color: var(--text-light); margin-top: 6px; font-style: italic; }
+  .result-section { padding: 20px 24px; border-bottom: 1px solid #f5f0eb; }
+  .result-section:last-child { border-bottom: none; }
+  .result-section h3 {
+    font-size: 13px; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+  }
+  .result-section .content { font-size: 15px; line-height: 1.8; color: #444; white-space: pre-wrap; }
+  .example-item {
+    background: #fdf8f4; border-radius: 10px; padding: 14px 18px; margin-bottom: 10px;
+    border-left: 3px solid var(--primary);
+  }
+  .example-item:last-child { margin-bottom: 0; }
+  .example-item .ja { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .example-item .zh { font-size: 14px; color: var(--text-light); }
+  /* ★ 修改：tag 统一支持点击样式 */
+  .tag {
+    display: inline-block; background: var(--primary-light); color: var(--primary);
+    padding: 3px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-right: 6px;
+    cursor: pointer; transition: all 0.15s; user-select: none;
+  }
+  .tag:hover { background: var(--primary); color: white; }
+  .tag.no-click { cursor: default; }
+  .tag.no-click:hover { background: var(--primary-light); color: var(--primary); }
+  .error-box {
+    background: #fff5f5; border: 1px solid #ffcdd2; border-radius: var(--radius);
+    padding: 20px 24px; color: #c62828; font-size: 14px; margin-bottom: 20px;
+  }
+  .history-section { margin-top: 10px; }
+  .history-section h3 { font-size: 14px; color: var(--text-light); margin-bottom: 10px; }
+  .history-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .history-list .h-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 14px; font-size: 14px; cursor: pointer; transition: all 0.15s;
+  }
+  .history-list .h-item:hover { border-color: var(--primary); color: var(--primary); }
+  .toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: #333; color: white; padding: 12px 28px; border-radius: 30px;
+    font-size: 14px; opacity: 0; transition: all 0.3s; z-index: 999; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (max-width: 480px) {
+    .header h1 { font-size: 22px; }
+    .search-input-wrap { flex-direction: column; }
+    .word-header .word { font-size: 34px; }
+    .container { padding: 16px 12px 60px; }
+    .random-btns { gap: 6px; }
+    .btn-random { padding: 7px 12px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🌸 日语单词学习</h1>
+    <p>输入单词或随机生成，AI 为你生成读音、释义、例句与记忆技巧</p>
+</div>
+
+<div class="container">
+    <div class="settings-toggle">
+        <button onclick="toggleConfig()" id="configBtn">⚙️ API 设置</button>
+    </div>
+
+    <div class="config-panel" id="configPanel">
+        <h2>⚙️ API 配置</h2>
+        <div class="form-group">
+            <label>接口地址 (Base URL)</label>
+            <input type="text" id="apiUrl" placeholder="例如: https://api.openai.com/v1/chat/completions">
+        </div>
+        <div class="form-group">
+            <label>API Token / Key</label>
+            <input type="password" id="apiKey" placeholder="sk-xxxx 或你的 Token">
+        </div>
+        <div class="form-group">
+            <label>模型名称 (可选)</label>
+            <input type="text" id="modelName" placeholder="例如: gpt-4o, deepseek-chat" value="gpt-4o">
+        </div>
+        <button class="btn-save" onclick="saveConfig()">💾 保存配置</button>
+    </div>
+
+    <div class="search-box">
+        <div class="search-input-wrap">
+            <input type="text" id="wordInput" placeholder="输入日语单词，如：頑張る"
+                   onkeydown="if(event.key==='Enter')searchWord()">
+            <button class="btn-search" id="searchBtn" onclick="searchWord()">🔍 学习</button>
+        </div>
+        <div class="quick-tags">
+            <span onclick="quickSearch('食べる')">食べる</span>
+            <span onclick="quickSearch('美しい')">美しい</span>
+            <span onclick="quickSearch('頑張って')">頑張って</span>
+            <span onclick="quickSearch('忖度')">忖度</span>
+            <span onclick="quickSearch('木漏れ日')">木漏れ日</span>
+            <span onclick="quickSearch('積ん読')">積ん読</span>
+        </div>
+
+        <div class="random-section">
+            <div class="label">🎲 随机考纲单词</div>
+            <div class="random-btns">
+                <button class="btn-random all" onclick="randomWord()">🎰 随机</button>
+                <button class="btn-random n5" onclick="randomWord('N5')">N5</button>
+                <button class="btn-random n4" onclick="randomWord('N4')">N4</button>
+                <button class="btn-random n3" onclick="randomWord('N3')">N3</button>
+                <button class="btn-random n2" onclick="randomWord('N2')">N2</button>
+                <button class="btn-random n1" onclick="randomWord('N1')">N1</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="history-section" id="historySection" style="display:none">
+        <h3>📖 最近查询</h3>
+        <div class="history-list" id="historyList"></div>
+    </div>
+
+    <div class="result-area" id="resultArea"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ========== Config ==========
+function loadConfig() {
+  return {
+    apiUrl: localStorage.getItem('jp_api_url') || '',
+    apiKey: localStorage.getItem('jp_api_key') || '',
+    model: localStorage.getItem('jp_model') || 'gpt-4o'
+  };
+}
+function saveConfig() {
+  const url = document.getElementById('apiUrl').value.trim();
+  const key = document.getElementById('apiKey').value.trim();
+  const model = document.getElementById('modelName').value.trim() || 'gpt-4o';
+  if (!url || !key) { showToast('❌ 请填写接口地址和 Token'); return; }
+  localStorage.setItem('jp_api_url', url);
+  localStorage.setItem('jp_api_key', key);
+  localStorage.setItem('jp_model', model);
+  showToast('✅ 配置已保存');
+  toggleConfig();
+  updateConfigBtn();
+}
+function toggleConfig() {
+  const panel = document.getElementById('configPanel');
+  panel.classList.toggle('active');
+  if (panel.classList.contains('active')) {
+    const cfg = loadConfig();
+    document.getElementById('apiUrl').value = cfg.apiUrl;
+    document.getElementById('apiKey').value = cfg.apiKey;
+    document.getElementById('modelName').value = cfg.model;
+  }
+}
+function updateConfigBtn() {
+  const cfg = loadConfig();
+  document.getElementById('configBtn').textContent =
+    cfg.apiUrl && cfg.apiKey ? '✅ API 已配置 · ⚙️ 修改' : '⚙️ API 设置（请先配置）';
+}
+
+// ========== History (上限10) ==========
+const HISTORY_MAX = 10;
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem('jp_history') || '[]'); } catch { return []; }
+}
+function addHistory(word) {
+  let h = getHistory();
+  h = h.filter(w => w !== word);
+  h.unshift(word);
+  if (h.length > HISTORY_MAX) h = h.slice(0, HISTORY_MAX);
+  localStorage.setItem('jp_history', JSON.stringify(h));
+  renderHistory();
+}
+function renderHistory() {
+  const h = getHistory();
+  const sec = document.getElementById('historySection');
+  const list = document.getElementById('historyList');
+  if (h.length === 0) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  list.innerHTML = h.map(w =>
+    `<div class="h-item" onclick="quickSearch('${escapeAttr(w)}')">${escapeHtml(w)}</div>`
+  ).join('');
+}
+
+// ========== Search ==========
+function quickSearch(word) {
+  document.getElementById('wordInput').value = word;
+  searchWord();
+}
+async function searchWord() {
+  const word = document.getElementById('wordInput').value.trim();
+  if (!word) { showToast('请输入单词'); return; }
+  const cfg = loadConfig();
+  if (!cfg.apiUrl || !cfg.apiKey) {
+    showToast('❌ 请先配置 API');
+    document.getElementById('configPanel').classList.add('active');
+    return;
+  }
+  const resultArea = document.getElementById('resultArea');
+  const searchBtn = document.getElementById('searchBtn');
+  searchBtn.disabled = true;
+  searchBtn.textContent = '⏳ 查询中...';
+  resultArea.classList.add('active');
+  resultArea.innerHTML = `<div class="loading"><div class="spinner"></div><p>AI 正在为你分析「${escapeHtml(word)}」...</p></div>`;
+  addHistory(word);
+  try {
+    const result = await callAI(cfg, buildDetailPrompt(word));
+    renderResult(word, result);
+  } catch (err) {
+    resultArea.innerHTML = `<div class="error-box"><strong>❌ 请求失败</strong><br><br>${escapeHtml(err.message)}<br><br><small>请检查 API 地址、Token 是否正确，网络是否正常。</small></div>`;
+  } finally {
+    searchBtn.disabled = false;
+    searchBtn.textContent = '🔍 学习';
+  }
+}
+
+// ========== ★ 词汇类型定义 ==========
+/**
+ * 每种词汇类型包含：
+ *   - id:        唯一标识
+ *   - label:     显示在结果卡上的标签
+ *   - color:     标签颜色
+ *   - weight:    权重（用于加权随机）
+ *   - prompt:    给AI的专用提示词片段
+ */
+const WORD_CATEGORIES = [
+  {
+    id: 'wago_kun',
+    label: '和語・訓読',
+    emoji: '🏯',
+    color: '#e74c6f',
+    weight: 15,
+    prompt: `【本次指定类型：和語（訓読み）词汇】
+请选一个典型的和語词汇，即使用训读的日语本土词汇。这类词多为汉字+送假名的形式，读音无法从汉字直接推断，是中国学习者的难点。
+特征：通常写作"汉字+假名"形式（如：食べる、美しい、引越す、片付ける、見逃す、思い付く）
+优先选择：复合动词、训读形容词、训读名词中那些"看汉字猜不出读音"的词
+禁止选择：音读汉语词、外来语`
+  },
+  {
+    id: 'kango_on',
+    label: '漢語・音読',
+    emoji: '📜',
+    color: '#1565c0',
+    weight: 15,
+    prompt: `【本次指定类型：漢語（音読み）词汇】
+请选一个汉语词（音读词），即源自中文的日语词汇，通常全部用汉字书写且使用音读。
+特征：两字以上的汉字熟语，音读为主（如：環境、経済、発展、矛盾、影響、構造）
+优先选择：
+  - 中日同形异义词（字形相同但含义不同，如：勉強、大丈夫、手紙、娘、新聞、汽車）
+  - 和制汉语（日本人自创的汉字词，中文不存在，如：取消、場合、見解、手続）
+禁止选择：看到汉字就能完全猜出意思且读音简单的词`
+  },
+  {
+    id: 'katakana',
+    label: '片假名外来语',
+    emoji: '🌍',
+    color: '#7b1fa2',
+    weight: 12,
+    prompt: `【本次指定类型：片假名外来语（カタカナ語）】
+请选一个片假名书写的外来语词汇。
+特征：用片假名书写，源自英语/法语/德语/葡萄牙语等西方语言（如：コンプライアンス、コストパフォーマンス、アイデンティティ）
+优先选择：
+  - 含义不能直接从英语猜出的"和制英语"（如：マンション=公寓、サラリーマン=上班族、コンセント=插座、クレーム=投诉）
+  - 含义发生偏移或缩略的外来语（如：ナイター=夜间比赛、リフォーム=装修、バイキング=自助餐）
+  - 较长且容易混淆的外来语
+禁止选择：コンピューター、テレビ等一看就懂的简单外来语`
+  },
+  {
+    id: 'onomatopoeia',
+    label: '拟声拟态词',
+    emoji: '🎭',
+    color: '#f57f17',
+    weight: 10,
+    prompt: `【本次指定类型：拟声拟态词（オノマトペ）】
+请选一个日语拟声词或拟态词。日语拥有极其丰富的拟声拟态词系统，这是日语的一大特色。
+特征：通常以假名书写，多为叠词形式
+类型包括：
+  - 拟声词（動物・自然の音）：わんわん、にゃんにゃん、ざあざあ
+  - 拟态词（状態・様子）：ぴかぴか、つるつる、べたべた、ふわふわ
+  - 拟容词（動作・動き）：のろのろ、てきぱき、うろうろ、そわそわ
+  - 拟情词（感情・気分）：わくわく、いらいら、もやもや、すっきり
+优先选择：日常生活中高频使用、能生动描述状态或动作的拟态词
+禁止选择：过于幼稚或仅用于儿童语的词`
+  },
+  {
+    id: 'jukujikun',
+    label: '熟字训・特殊读法',
+    emoji: '🔮',
+    color: '#d84315',
+    weight: 10,
+    prompt: `【本次指定类型：熟字训 / 特殊读法词汇】
+请选一个"熟字训"或具有特殊读法的词汇。这类词的汉字写法与读音之间没有对应关系，必须整体记忆。
+特征：汉字的读音既不是常规音读也不是常规训读
+典型例子：
+  - 熟字训：明日（あした）、大人（おとな）、今朝（けさ）、梅雨（つゆ）、紅葉（もみじ）
+  - 特殊训读：五月雨（さみだれ）、八百屋（やおや）、相撲（すもう）、眼鏡（めがね）
+  - 当て字（借字）：滅多（めった）、素敵（すてき）、浪漫（ろまん）
+优先选择：JLPT考试中常考的特殊读法词汇
+禁止选择：读音规则正常的普通汉字词`
+  },
+  {
+    id: 'yojijukugo',
+    label: '四字熟语・谚语',
+    emoji: '📖',
+    color: '#2e7d32',
+    weight: 8,
+    prompt: `【本次指定类型：四字熟语 / 日语谚语】
+请选一个日语四字熟语或谚语。
+特征：四个汉字组成的固定短语，或日语传统谚语
+典型例子：
+  - 四字熟语：一石二鳥、自業自得、七転八起、以心伝心、一期一会、十人十色、弱肉強食
+  - 谚语：猿も木から落ちる、花より団子、猫に小判、七転び八起き
+优先选择：与中文成语含义不同、或日语独有的四字熟语
+禁止选择：与中文成语完全相同且含义一致的词（如：自暴自棄等完全一致的）`
+  },
+  {
+    id: 'polyseme',
+    label: '多义词・搭配词',
+    emoji: '🔀',
+    color: '#00838f',
+    weight: 10,
+    prompt: `【本次指定类型：多义词 / 高频搭配动词】
+请选一个含义丰富、需要结合语境才能确定具体意思的多义词或搭配动词。
+特征：同一个词在不同搭配中含义差异很大
+典型例子：
+  - 多义动词：かける（挂/花费/乘坐/开始...）、とる（取/拿/脱/拍摄...）、あがる（上/完成/紧张...）、きる（切/穿/断/完成...）
+  - 多义名词：間（空间/时间/关系）、気（精神/心情/空气/注意力）
+  - 多功能表达：もの、こと、ところ 等抽象名词的特殊用法
+优先选择：JLPT考试中频繁出现的多义词，尤其是动词搭配题常考的词`
+  },
+  {
+    id: 'keigo',
+    label: '敬语・郑重表达',
+    emoji: '🎩',
+    color: '#4527a0',
+    weight: 8,
+    prompt: `【本次指定类型：敬语 / 郑重表达词汇】
+请选一个敬语词汇或郑重表达。敬语是日语学习的重要难点。
+类型包括：
+  - 尊敬语：いらっしゃる、おっしゃる、召し上がる、ご覧になる、なさる
+  - 谦让语：申し上げる、拝見する、いただく、伺う、参る
+  - 郑重语/美化语：お～です、ございます、～させていただきます
+优先选择：JLPT考试敬语题高频词汇，尤其是特殊变形或容易混淆的敬语动词
+禁止选择：普通动词的原形`
+  },
+  {
+    id: 'confusable',
+    label: '易混淆词',
+    emoji: '⚠️',
+    color: '#e65100',
+    weight: 12,
+    prompt: `【本次指定类型：易混淆词 / 近义词辨析】
+请选一组容易混淆的词汇中的一个作为主词。这些词在字形、读音或含义上非常接近，容易搞混。
+典型例子：
+  - 读音相似：収集/収拾、回答/解答、権利/権力、対象/対照/対象
+  - 含义相近：大きい/偉い/多い、静か/大人しい/穏やか、楽しい/嬉しい/愉快
+  - 字形相似：検討/検討、保証/保障/補償、作成/作製
+优先选择：JLPT考试中"用法选择题"常考的易混词`
+  }
+];
+
+/**
+ * ★ 核心：加权随机选择词汇类型
+ * 使用 Math.random() 生成随机数，根据权重映射到对应类型
+ */
+function pickCategory() {
+  const totalWeight = WORD_CATEGORIES.reduce((sum, c) => sum + c.weight, 0);
+  const rand = Math.random() * totalWeight; // [0, totalWeight)
+
+  let cumulative = 0;
+  for (const cat of WORD_CATEGORIES) {
+    cumulative += cat.weight;
+    if (rand < cumulative) {
+      return cat;
+    }
+  }
+  // 理论上不会走到这里，但做兜底
+  return WORD_CATEGORIES[WORD_CATEGORIES.length - 1];
+}
+
+// ========== ★ Random Word ==========
+async function randomWord(level) {
+  const cfg = loadConfig();
+  if (!cfg.apiUrl || !cfg.apiKey) {
+    showToast('❌ 请先配置 API');
+    document.getElementById('configPanel').classList.add('active');
+    return;
+  }
+  const allRandomBtns = document.querySelectorAll('.btn-random');
+  allRandomBtns.forEach(b => b.disabled = true);
+  const resultArea = document.getElementById('resultArea');
+  resultArea.classList.add('active');
+
+  // ★ 随机选择词汇类型
+  const category = pickCategory();
+  const levelText = level ? `JLPT ${level} 考纲` : '任意级别考纲';
+
+  resultArea.innerHTML = `
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>🎲 随机类型：<strong style="color:${category.color}">${category.emoji} ${category.label}</strong></p>
+      <p style="margin-top:6px;font-size:12px;color:#999;">AI 正在挑选${levelText}单词...</p>
+    </div>`;
+
+  try {
+    const word = await callAIForRandomWord(cfg, buildRandomPrompt(level, category));
+    document.getElementById('wordInput').value = word;
+
+    // ★ 记住当前词汇类型，渲染详情时使用
+    window._lastRandomCategory = category;
+
+    resultArea.classList.remove('active');
+    resultArea.innerHTML = '';
+    await searchWord();
+  } catch (err) {
+    resultArea.innerHTML = `<div class="error-box"><strong>❌ 随机单词生成失败</strong><br><br>${escapeHtml(err.message)}<br><br><small>请检查 API 配置和网络连接。</small></div>`;
+  } finally {
+    allRandomBtns.forEach(b => b.disabled = false);
+  }
+}
+
+/**
+ * ★ 构建随机选词提示词
+ * @param {string|null} level - JLPT 级别
+ * @param {object} category - 由 pickCategory() 选中的词汇类型对象
+ */
+function buildRandomPrompt(level, category) {
+  const levelConstraint = level
+    ? `请严格从 JLPT ${level} 官方考试大纲词汇表或历年 ${level} 真题中出现过的词汇中选取。`
+    : `请从 JLPT N5~N1 各级别官方考试大纲词汇表或历年真题高频词汇中选取。`;
+
+  return `你是一位专门辅导中国学生备考 JLPT 的日语教师。
+
+${levelConstraint}
+
+${category.prompt}
+
+其他要求：
+1. 严禁生僻词、古语、方言、专有名词
+2. 每次尽量不重复之前推荐过的词
+3. 必须是真实存在且常用的日语词汇
+4. 只输出一个日语单词原文（汉字或假名形式，根据词汇类型决定），不要输出假名、罗马音、释义、标点或任何其他内容
+5. 如果是指定片假名类型，就只输出片假名形式；如果是和語/漢語类型，输出汉字形式`;
+}
+
+async function callAIForRandomWord(cfg, prompt) {
+  const response = await fetch(cfg.apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.apiKey}` },
+    body: JSON.stringify({
+      model: cfg.model,
+      messages: [
+        { role: 'system', content: '你是专教中国学生的JLPT备考教师。只输出一个日语考纲单词原文，不加任何解释、标点、引号或其他文字。' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 1.0,
+      max_tokens: 30
+    })
+  });
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`HTTP ${response.status}: ${errText.slice(0, 300)}`);
+  }
+  const data = await response.json();
+  let content = (data.choices?.[0]?.message?.content || '').trim();
+  content = content.replace(/^["'"「『【]/, '').replace(/["'"」』】]$/, '').replace(/[。，,.!\s]+$/g, '').trim();
+  if (!content || content.length > 20) {
+    throw new Error('AI 返回的内容不是有效单词：' + content.slice(0, 200));
+  }
+  return content;
+}
+
+// ========== Detail Prompt ==========
+function buildDetailPrompt(word) {
+  // ★ 如果有词汇类型信息，注入到详情提示词中
+  const cat = window._lastRandomCategory;
+  const categoryHint = cat
+    ? `\n\n【词汇类型提示】这个单词属于「${cat.label}」类型，请在释义、记忆技巧和使用注意中，针对该类型的特点进行重点讲解。例如：\n- 如果是训读词，重点讲训读规律和送假名\n- 如果是外来语，说明语源和与原文语言的差异\n- 如果是拟态词，解释其描绘的状态/动作意象\n- 如果是敬语，说明尊敬/谦让/郑重的区分\n- 如果是同形异义词，对比中日含义差异\n`
+    : '';
+
+  return `你是一位专业的日语教师。请为用户查询的日语单词「${word}」提供详细的学习内容。
+${categoryHint}
+请严格按照以下JSON格式输出（不要输出其他内容，只输出JSON）：
+
+{
+  "word": "单词原文",
+  "kana": "假名读音",
+  "romaji": "罗马音",
+  "accent": "声调类型",
+  "part_of_speech": "词性",
+  "meanings": ["含义1", "含义2"],
+  "conjugations": [{ "form": "变形名称", "value": "变形结果" }],
+  "examples": [
+    { "ja": "日语例句1", "zh": "中文翻译1" },
+    { "ja": "日语例句2", "zh": "中文翻译2" },
+    { "ja": "日语例句3", "zh": "中文翻译3" }
+  ],
+  "synonyms": ["近义词1"],
+  "antonyms": ["反义词1"],
+  "related": ["相关词汇1", "相关词汇2"],
+  "mnemonic": "记忆技巧或词源解析",
+  "usage_notes": "使用注意事项",
+  "jlpt_level": "N5/N4/N3/N2/N1"
+}
+
+注意：conjugations 仅对动词/形容词有效，名词留空数组。只输出JSON。`;
+}
+
+// ========== API Call ==========
+async function callAI(cfg, prompt) {
+  const response = await fetch(cfg.apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${cfg.apiKey}` },
+    body: JSON.stringify({
+      model: cfg.model,
+      messages: [
+        { role: 'system', content: '你是专业日语教师，请用JSON格式回答，只输出JSON。' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.3,
+      max_tokens: 2000
+    })
+  });
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`HTTP ${response.status}: ${errText.slice(0, 300)}`);
+  }
+  const data = await response.json();
+  let content = data.choices?.[0]?.message?.content || '';
+  content = content.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+  try { return JSON.parse(content); }
+  catch { throw new Error('AI 返回无法解析为JSON：\n' + content.slice(0, 500)); }
+}
+
+// ========== ★ Render ==========
+function renderResult(word, data) {
+  const area = document.getElementById('resultArea');
+
+  const clickableTag = (text) =>
+    `<span class="tag" onclick="quickSearch('${escapeAttr(text)}')" title="点击查询：${escapeAttr(text)}">${escapeHtml(text)}</span>`;
+
+  const staticTag = (text, extraStyle) =>
+    `<span class="tag no-click" ${extraStyle ? `style="${extraStyle}"` : ''}>${escapeHtml(text)}</span>`;
+
+  // ★ 词汇类型标签
+  const cat = window._lastRandomCategory;
+  const categoryBadge = cat
+    ? `<span class="tag no-click" style="background:${cat.color};color:white;font-size:11px;">${cat.emoji} ${cat.label}</span>`
+    : '';
+
+  let conjHtml = '';
+  if (data.conjugations?.length > 0) {
+    conjHtml = `<div class="result-section"><h3>📐 活用变形</h3><div class="content">${
+      data.conjugations.map(c => `<div style="margin-bottom:6px"><strong>${escapeHtml(c.form)}：</strong>${escapeHtml(c.value)}</div>`).join('')
+    }</div></div>`;
+  }
+
+  let synHtml = data.synonyms?.length
+    ? `<div class="result-section"><h3>🔄 近义词</h3><div class="content">${data.synonyms.map(clickableTag).join('')}</div></div>`
+    : '';
+
+  let antHtml = data.antonyms?.length
+    ? `<div class="result-section"><h3>↔️ 反义词</h3><div class="content">${data.antonyms.map(clickableTag).join('')}</div></div>`
+    : '';
+
+  let relHtml = data.related?.length
+    ? `<div class="result-section"><h3>🔗 相关词汇</h3><div class="content">${data.related.map(clickableTag).join('')}</div></div>`
+    : '';
+
+  area.innerHTML = `
+    <div class="result-card">
+      <div class="word-header">
+        <div class="kana">${escapeHtml(data.kana || '')}</div>
+        <div class="word">${escapeHtml(data.word || word)}</div>
+        <div class="romaji">${escapeHtml(data.romaji || '')} ${data.accent ? '· ' + escapeHtml(data.accent) : ''}</div>
+        <div style="margin-top:10px">
+          ${staticTag(data.part_of_speech || '')}
+          ${data.jlpt_level ? staticTag(data.jlpt_level, 'background:#e8f5e9;color:#2e7d32') : ''}
+          ${categoryBadge}
+        </div>
+      </div>
+      <div class="result-section">
+        <h3>📖 释义</h3>
+        <div class="content">${(data.meanings || []).map((m, i) => `<div>${i + 1}. ${escapeHtml(m)}</div>`).join('')}</div>
+      </div>
+      ${conjHtml}
+      <div class="result-section">
+        <h3>💬 例句</h3>
+        ${(data.examples || []).map(ex => `
+          <div class="example-item">
+            <div class="ja">${escapeHtml(ex.ja)}</div>
+            <div class="zh">${escapeHtml(ex.zh)}</div>
+          </div>`).join('')}
+      </div>
+      ${synHtml}${antHtml}${relHtml}
+      <div class="result-section">
+        <h3>💡 记忆技巧</h3>
+        <div class="content">${escapeHtml(data.mnemonic || '')}</div>
+      </div>
+      <div class="result-section">
+        <h3>📝 使用注意</h3>
+        <div class="content">${escapeHtml(data.usage_notes || '')}</div>
+      </div>
+    </div>`;
+
+  // ★ 用完即清
+  window._lastRandomCategory = null;
+}
+
+// ========== Utils ==========
+function escapeHtml(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+function escapeAttr(s) {
+  if (!s) return '';
+  return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ========== Init ==========
+window.addEventListener('DOMContentLoaded', () => {
+  updateConfigBtn();
+  renderHistory();
+  const cfg = loadConfig();
+  if (!cfg.apiUrl || !cfg.apiKey) document.getElementById('configPanel').classList.add('active');
+});
+</script>
+</body>
+</html>
