@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>振假名 Ruby 转换器</title>
+    <style>
+  :root {
+    --primary: #c0392b;
+    --primary-hover: #a93226;
+    --bg: #f5f1eb;
+    --card-bg: #ffffff;
+    --text: #2c3e50;
+    --text-light: #7f8c8d;
+    --border: #e0d8cc;
+    --code-bg: #f8f6f2;
+    --success: #27ae60;
+    --warning-bg: #fff8e1;
+    --warning-border: #f39c12;
+    --error-bg: #fdecea;
+    --error-border: #e74c3c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 20px;
+  }
+
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  header h1 {
+    font-size: 1.6em;
+    color: var(--primary);
+    margin-bottom: 6px;
+  }
+
+  header p {
+    color: var(--text-light);
+    font-size: 0.92em;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .card h2 {
+    font-size: 1.05em;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--bg);
+    color: var(--text);
+  }
+
+  .bracket-settings {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .setting-item {
+    flex: 1;
+    min-width: 220px;
+  }
+
+  .setting-item label {
+    display: block;
+    font-size: 0.88em;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  .setting-item select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.95em;
+    background: #fff;
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .setting-item select:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+
+  .samples {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: var(--code-bg);
+    border-radius: 8px;
+    font-size: 0.9em;
+  }
+
+  .samples .sample-row {
+    margin-bottom: 6px;
+  }
+
+  .samples .sample-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .samples .sample-label {
+    color: var(--text-light);
+    font-size: 0.85em;
+  }
+
+  .samples code {
+    background: #fff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.95em;
+    color: var(--primary);
+  }
+
+  .msg {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.88em;
+    display: none;
+  }
+
+  .msg.error {
+    background: var(--error-bg);
+    border: 1px solid var(--error-border);
+    color: #922b21;
+    display: block;
+  }
+
+  .msg.warn {
+    background: var(--warning-bg);
+    border: 1px solid var(--warning-border);
+    color: #7d6608;
+    display: block;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 140px;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 1em;
+    font-family: inherit;
+    resize: vertical;
+    line-height: 1.8;
+    transition: border-color 0.2s;
+  }
+
+  textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+
+  textarea::placeholder {
+    color: #bbb;
+  }
+
+  .input-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-small {
+    padding: 5px 14px;
+    font-size: 0.82em;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-small:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  .convert-area {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  #convertBtn {
+    padding: 12px 48px;
+    font-size: 1.05em;
+    font-weight: 600;
+    color: #fff;
+    background: var(--primary);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    box-shadow: 0 3px 10px rgba(192,57,43,0.25);
+  }
+
+  #convertBtn:hover:not(:disabled) {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+  }
+
+  #convertBtn:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  #convertBtn:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .output-section {
+    display: none;
+  }
+
+  .output-section.visible {
+    display: block;
+  }
+
+  .output-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 700px) {
+    .output-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .output-panel h3 {
+    font-size: 0.9em;
+    color: var(--text-light);
+    margin-bottom: 10px;
+  }
+
+  .preview-box {
+    padding: 16px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1.15em;
+    line-height: 2.2;
+    white-space: pre-wrap;
+    word-break: break-all;
+    min-height: 60px;
+  }
+
+  .preview-box ruby {
+    ruby-align: center;
+  }
+
+  .preview-box rt {
+    font-size: 0.5em;
+    color: var(--primary);
+  }
+
+  .code-box {
+    position: relative;
+  }
+
+  .code-box pre {
+    padding: 16px;
+    background: #2d2d2d;
+    color: #f8f8f2;
+    border-radius: 8px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.82em;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+
+  .copy-btn {
+    margin-top: 10px;
+    padding: 8px 24px;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--primary);
+    background: #fff;
+    border: 2px solid var(--primary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .copy-btn:hover {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .copy-btn.copied {
+    border-color: var(--success);
+    color: var(--success);
+    background: #eafaf1;
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 30px;
+    font-size: 0.8em;
+    color: #bbb;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>振假名 Ruby 转换器</h1>
+        <p>使用自定义括号标记，一键转换为 HTML ruby 注音格式</p>
+    </header>
+
+    <!-- 括号设置 -->
+    <div class="card">
+        <h2>括号设置</h2>
+        <div class="bracket-settings">
+            <div class="setting-item">
+                <label for="kanjiBracket">汉字括号（多字分组用）</label>
+                <select id="kanjiBracket"></select>
+            </div>
+            <div class="setting-item">
+                <label for="kanaBracket">假名括号（读音标注用）</label>
+                <select id="kanaBracket"></select>
+            </div>
+        </div>
+
+        <div id="bracketMsg" class="msg"></div>
+
+        <div class="samples" id="samplesArea">
+            <div class="sample-row">
+                <span class="sample-label">单字示例：</span>
+                <code id="sampleSingle"></code>
+                <span class="sample-label">→ 渲染为「漢」注音 かん</span>
+            </div>
+            <div class="sample-row">
+                <span class="sample-label">多字示例：</span>
+                <code id="sampleMulti"></code>
+                <span class="sample-label">→ 渲染为「漢字」注音 かんじ</span>
+            </div>
+            <div class="sample-row">
+                <span class="sample-label">混合示例：</span>
+                <code id="sampleMixed"></code>
+            </div>
+        </div>
+    </div>
+
+    <!-- 输入区 -->
+    <div class="card">
+        <h2>原始文本</h2>
+        <textarea id="inputText" placeholder="在此输入带有括号标记的文本…&#10;例如：今日【きょう】は良【よ】い天気【てんき】です。"></textarea>
+        <div class="input-actions">
+            <button class="btn-small" id="fillExampleBtn">填充示例文本</button>
+            <button class="btn-small" id="clearBtn">清空</button>
+        </div>
+    </div>
+
+    <!-- 转换按钮 -->
+    <div class="convert-area">
+        <button id="convertBtn">转 换</button>
+    </div>
+
+    <!-- 输出区 -->
+    <div class="card output-section" id="outputSection">
+        <h2>转换结果</h2>
+        <div class="output-grid">
+            <div class="output-panel">
+                <h3>渲染预览</h3>
+                <div class="preview-box" id="previewBox"></div>
+            </div>
+            <div class="output-panel">
+                <h3>HTML 代码</h3>
+                <div class="code-box">
+                    <pre id="codeBox"></pre>
+                </div>
+                <button class="copy-btn" id="copyBtn">复制 HTML 代码</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        提示：转换后的 HTML 代码可直接粘贴到支持 ruby 标签的论坛编辑器中使用。
+    </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ========== 预设括号选项 ========== */
+  const BRACKETS = [
+    { value: 'square',      name: '方括号 [ ]',       open: '[',  close: ']'  },
+    { value: 'black',       name: '方头括号 【 】',    open: '【', close: '】' },
+    { value: 'angle',       name: '单角括号 〈 〉',    open: '〈', close: '〉' },
+    { value: 'doubleAngle', name: '双角括号 《 》',    open: '《', close: '》' },
+    { value: 'corner',      name: '直角引号 「 」',    open: '「', close: '」' },
+    { value: 'whiteCorner', name: '白角引号 『 』',    open: '『', close: '』' },
+    { value: 'paren',       name: '半角圆括号 ( )',    open: '(',  close: ')'  },
+    { value: 'fullParen',   name: '全角圆括号 （ ）',  open: '（', close: '）' },
+    { value: 'curly',       name: '花括号 { }',        open: '{',  close: '}'  },
+  ];
+
+  /* ========== DOM 元素 ========== */
+  const kanjiSelect   = document.getElementById('kanjiBracket');
+  const kanaSelect    = document.getElementById('kanaBracket');
+  const bracketMsg    = document.getElementById('bracketMsg');
+  const sampleSingle  = document.getElementById('sampleSingle');
+  const sampleMulti   = document.getElementById('sampleMulti');
+  const sampleMixed   = document.getElementById('sampleMixed');
+  const inputText     = document.getElementById('inputText');
+  const convertBtn    = document.getElementById('convertBtn');
+  const outputSection = document.getElementById('outputSection');
+  const previewBox    = document.getElementById('previewBox');
+  const codeBox       = document.getElementById('codeBox');
+  const copyBtn       = document.getElementById('copyBtn');
+
+  let currentHtml = '';
+
+  /* ========== 初始化下拉框 ========== */
+  function initSelects() {
+    BRACKETS.forEach(b => {
+      kanjiSelect.add(new Option(b.name, b.value));
+      kanaSelect.add(new Option(b.name, b.value));
+    });
+    // 默认推荐：汉字括号用 []，假名括号用【】
+    kanjiSelect.value = 'square';
+    kanaSelect.value  = 'fullParen';
+  }
+
+  function getBracket(value) {
+    return BRACKETS.find(b => b.value === value);
+  }
+
+  /* ========== 转义正则特殊字符 ========== */
+  function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  /* ========== 更新样例与校验 ========== */
+  function updateUI() {
+    const kb = getBracket(kanjiSelect.value);
+    const rb = getBracket(kanaSelect.value);
+    const same = kanjiSelect.value === kanaSelect.value;
+
+    // 校验：不能相同
+    if (same) {
+      bracketMsg.className = 'msg error';
+      bracketMsg.textContent = '汉字括号和假名括号不能相同，请重新选择。';
+      convertBtn.disabled = true;
+      sampleSingle.textContent = '—';
+      sampleMulti.textContent  = '—';
+      sampleMixed.textContent  = '—';
+      return;
+    }
+
+    convertBtn.disabled = false;
+
+    // 清除所有提示信息
+    bracketMsg.className = 'msg';
+    bracketMsg.textContent = '';
+
+    // 更新样例
+    sampleSingle.textContent = `漢${rb.open}かん${rb.close}`;
+    sampleMulti.textContent  = `${kb.open}漢字${kb.close}${rb.open}かんじ${rb.close}`;
+    sampleMixed.textContent  =
+      `${kb.open}今日${kb.close}${rb.open}きょう${rb.close}は良${rb.open}よ${rb.close}い${kb.open}天気${kb.close}${rb.open}てんき${rb.close}です`;
+    }
+
+  /* ========== 核心转换逻辑 ========== */
+  function convert(text) {
+    const kb = getBracket(kanjiSelect.value);
+    const rb = getBracket(kanaSelect.value);
+
+    // 第一步：多字注音（必须先于单字处理）
+    const multiPattern =
+      escapeRegex(kb.open) + '(.+?)' + escapeRegex(kb.close) +
+      escapeRegex(rb.open) + '(.+?)' + escapeRegex(rb.close);
+    const multiRegex = new RegExp(multiPattern, 'g');
+    text = text.replace(multiRegex, '<ruby>$1<rt>$2</rt></ruby>');
+
+    // 第二步：单字注音（匹配任意字符，不再限定 CJK 汉字）
+    // [^...] 排除假名左括号，防止与多字规则残留或连续标记产生歧义
+    const singlePattern =
+      '([^' + escapeRegex(rb.open) + '])' +
+      escapeRegex(rb.open) + '(.+?)' + escapeRegex(rb.close);
+    const singleRegex = new RegExp(singlePattern, 'g');
+    text = text.replace(singleRegex, '<ruby>$1<rt>$2</rt></ruby>');
+
+    return text;
+  }
+
+  /* ========== 执行转换并展示 ========== */
+  function doConvert() {
+    const raw = inputText.value;
+    if (!raw.trim()) {
+      alert('请先输入需要转换的文本。');
+      return;
+    }
+
+    currentHtml = convert(raw);
+
+    // 渲染预览（innerHTML 直接解析 ruby 标签）
+    previewBox.innerHTML = currentHtml;
+
+    // 显示代码（textContent 自动转义，安全展示）
+    codeBox.textContent = currentHtml;
+
+    // 展示输出区域
+    outputSection.classList.add('visible');
+    outputSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // 重置复制按钮状态
+    copyBtn.textContent = '复制 HTML 代码';
+    copyBtn.classList.remove('copied');
+  }
+
+  /* ========== 复制功能 ========== */
+  function copyHtml() {
+    if (!currentHtml) return;
+
+    const onSuccess = () => {
+      copyBtn.textContent = '已复制！';
+      copyBtn.classList.add('copied');
+      setTimeout(() => {
+        copyBtn.textContent = '复制 HTML 代码';
+        copyBtn.classList.remove('copied');
+      }, 2000);
+    };
+
+    const fallbackCopy = () => {
+      const ta = document.createElement('textarea');
+      ta.value = currentHtml;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); onSuccess(); }
+      catch (e) { alert('复制失败，请手动选择代码复制。'); }
+      document.body.removeChild(ta);
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(currentHtml)
+        .then(onSuccess)
+        .catch(fallbackCopy);
+    } else {
+      fallbackCopy();
+    }
+  }
+
+  /* ========== 填充示例文本 ========== */
+  function fillExample() {
+    const kb = getBracket(kanjiSelect.value);
+    const rb = getBracket(kanaSelect.value);
+    inputText.value =
+      `${kb.open}今日${kb.close}${rb.open}きょう${rb.close}は良${rb.open}よ${rb.close}い${kb.open}天気${kb.close}${rb.open}てんき${rb.close}です。\n` +
+      `私${rb.open}わたし${rb.close}は${kb.open}日本語${kb.close}${rb.open}にほんご${rb.close}を${kb.open}勉強${kb.close}${rb.open}べんきょう${rb.close}しています。`;
+  }
+
+  /* ========== 事件绑定 ========== */
+  kanjiSelect.addEventListener('change', updateUI);
+  kanaSelect.addEventListener('change', updateUI);
+  convertBtn.addEventListener('click', doConvert);
+  copyBtn.addEventListener('click', copyHtml);
+  document.getElementById('fillExampleBtn').addEventListener('click', fillExample);
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    inputText.value = '';
+    inputText.focus();
+  });
+
+  /* ========== 启动 ========== */
+  initSelects();
+  updateUI();
+})();
+</script>
+
+</body>
+</html>
