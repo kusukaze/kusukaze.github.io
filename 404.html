@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - 页面未找到 | 日语小贴士</title>
+    <style>
+        :root {
+            --bg-color: #f7f5f0;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --text-sub: #6b7c93;
+            --accent: #d65a31;
+            --jp-font: "Noto Sans SC", "Source Han Sans CN", "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: "Noto Sans SC", "Source Han Sans CN", "PingFang SC", "Microsoft YaHei", sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 2rem 1rem;
+        }
+
+        .bg-text {
+            position: fixed;
+            font-size: 25vw;
+            font-weight: 900;
+            color: rgba(0,0,0,0.03);
+            z-index: 0;
+            user-select: none;
+            line-height: 1;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 640px;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* ========== 404 强提示区域 ========== */
+        .error-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .error-code {
+            font-size: 4rem;
+            font-weight: 900;
+            color: var(--accent);
+            line-height: 1;
+            letter-spacing: -2px;
+        }
+
+        .error-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-top: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .error-desc {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            margin-top: 0.4rem;
+        }
+
+        /* ========== 随机图片 ========== */
+        .random-image-wrapper {
+            width: 100%;
+            height: 200px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            background: #e8e4dd;
+            position: relative;
+        }
+
+        .random-image-wrapper img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .image-caption {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.5));
+            color: #fff;
+            padding: 2rem 1rem 0.6rem;
+            font-size: 0.75rem;
+            text-align: right;
+        }
+
+        /* ========== 知识卡片（含右上角按钮） ========== */
+        .tip-card {
+            background: var(--card-bg);
+            padding: 2.5rem 2rem 2rem;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+            border-top: 4px solid var(--accent);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            text-align: left;
+            position: relative; /* 为按钮绝对定位提供参照 */
+        }
+
+        .tip-card.fade-out {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+
+        /* 换一换按钮 - 卡片右上角 */
+        .refresh-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: transparent;
+            border: 1px solid var(--text-sub);
+            color: var(--text-sub);
+            padding: 0.35rem 0.9rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            z-index: 2;
+        }
+
+        .refresh-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .refresh-btn svg {
+            width: 12px; height: 12px;
+            transition: transform 0.5s ease;
+        }
+        .refresh-btn:hover svg { transform: rotate(180deg); }
+
+        .jp-word {
+            font-family: var(--jp-font);
+            font-size: 2.2rem;
+            color: var(--text-main);
+            text-align: center;
+            margin-top: 0.5rem;
+        }
+
+        .jp-reading {
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            text-align: center;
+            margin-bottom: 1.2rem;
+            font-style: italic;
+        }
+
+        .cn-meaning {
+            font-size: 1.15rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 1.2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px dashed #eee;
+        }
+
+        /* ========== 富文本内容 ========== */
+        .tip-body { font-size: 0.92rem; line-height: 1.9; color: var(--text-main); }
+        .tip-body p { margin-bottom: 0.7rem; }
+        .tip-body p:last-child { margin-bottom: 0; }
+        .tip-body strong { color: var(--accent); font-weight: 700; }
+        .tip-body .dim { color: #bbb; }
+
+        .example-block {
+            background: #faf9f6;
+            border-left: 3px solid var(--accent);
+            padding: 0.7rem 1rem;
+            margin: 0.7rem 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .example-jp { font-family: var(--jp-font); font-size: 0.95rem; margin-bottom: 0.2rem; }
+        .example-cn { font-size: 0.82rem; color: var(--text-sub); }
+
+        .culture-tag {
+            display: inline-block;
+            font-size: 0.7rem;
+            background: var(--accent);
+            color: #fff;
+            padding: 2px 7px;
+            border-radius: 3px;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+
+        /* ========== 底部链接 ========== */
+        .back-link {
+            margin-top: 1.5rem;
+            color: var(--text-sub);
+            text-decoration: none;
+            font-size: 0.85rem;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+            display: inline-block;
+        }
+        .back-link:hover { opacity: 1; text-decoration: underline; }
+
+        @media (max-width: 480px) {
+            .error-code { font-size: 3rem; }
+            .jp-word { font-size: 1.7rem; }
+            .tip-card { padding: 2rem 1.2rem 1.5rem; }
+            .random-image-wrapper { height: 150px; }
+            .refresh-btn { top: 0.7rem; right: 0.7rem; padding: 0.3rem 0.7rem; font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-text">404</div>
+
+<div class="container">
+    <!-- ✅ 强化的404提示 -->
+    <div class="error-header">
+        <div class="error-code">404</div>
+        <div class="error-title">抱歉，您访问的页面不存在</div>
+        <div class="error-desc">该页面可能已被移除或链接有误 · 不如趁此学一句日语吧 ✨</div>
+        <div class="error-desc">本页信息尚未经过严格校对，仅供参考！</div>
+    </div>
+
+    <!-- 🖼️ 随机图片（页面加载时选定，换一换不变） -->
+    <div class="random-image-wrapper">
+        <img id="randomImg" src="" alt="日语氛围图">
+        <div class="image-caption" id="imgCaption"></div>
+    </div>
+
+    <!-- 📖 知识卡片 -->
+    <div class="tip-card" id="tipCard">
+        <!-- ✅ 换一换按钮移至卡片右上角 -->
+        <button class="refresh-btn" id="refreshBtn" title="换一条小知识">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            换一换
+        </button>
+
+        <div class="jp-word" id="jpWord">...</div>
+        <div class="jp-reading" id="jpReading">...</div>
+        <div class="cn-meaning" id="cnMeaning">...</div>
+        <div class="tip-body" id="tipBody">...</div>
+    </div>
+
+    <a href="/" class="back-link">← 返回首页</a>
+</div>
+
+<script>
+/* =============================================================
+   📚 日语知识库
+
+   ⚠️ 安全标记语法（完全避免引号/转义报错）：
+     【加粗文字】       → 红色加粗
+     《置灰文字》       → 浅灰色弱化（隐藏主语等）
+     >>日文例句|中文翻译 → 例句卡片块
+     [文化]             → 红色「文化知识」标签
+     空行               → 段落分隔
+   ============================================================= */
+
+var tips = [
+    {
+        word: "木漏れ日",
+        reading: "Komorebi（こもれび）",
+        meaning: "阳光透过树叶缝隙洒下的光影",
+        content: "[文化]这是日语中【最美且无法直译】的词汇之一。\n\n它描述的是一种特定的自然现象——阳光穿过树叶间隙，在地面上形成斑驳摇曳的光影。\n\n>>木漏れ日が差し込む森を散歩する。|在阳光透过树叶洒落的森林中散步。\n\n日本人认为这种光影变化体现了《物哀（もののあはれ）》的美学意识，即对【转瞬即逝之美】的深切感动。"
+    },
+    {
+        word: "一期一会",
+        reading: "Ichigo Ichie（いちごいちえ）",
+        meaning: "一生仅有一次的相会",
+        content: "[文化]源自【茶道】的核心精神用语。\n\n提醒人们珍惜当下的每一次相遇，因为此时此刻的时光永远不会重来。即使与同一个人再次相见，彼此的心境与环境也已完全不同。\n\n>>この出会いは一期一会だと思って、大切にしたい。|我想把这次相遇当作一生一次的缘分来珍惜。\n\n《私》は今、あなたとこうして話せていることが、まさに一期一会ですね。"
+    },
+    {
+        word: "積ん読",
+        reading: "Tsundoku（つんどく）",
+        meaning: "买了书却堆着不读",
+        content: "由【積む】（堆积）和【読書】（读书）组合而成的造语。\n\n精准描述了全世界爱书人的共同通病。有趣的是，这个词并不含贬义，反而带着一种对书籍热爱之情的温暖自嘲。\n\n>>また本を買ってしまった。完全に積ん読になりそうだ。|又买了书，感觉完全要变成堆着不读了。\n\n与之相对的概念是【読みかけ】（读到一半搁置），两者经常一起出现在日本读书爱好者的日常对话中。"
+    },
+    {
+        word: "金継ぎ",
+        reading: "Kintsugi（きんつぎ）",
+        meaning: "用金粉修补破碎器物的传统工艺",
+        content: "[文化]与其掩盖裂痕，不如用【金漆】将其凸显为美。\n\n这种哲学认为破损和修复是物体历史的一部分，而非需要隐藏的缺陷。伤痕也可以成为最美的地方。\n\n>>割れた茶碗を金継ぎで修復した。|用金缮工艺修复了破碎的茶碗。\n\n这个概念近年来在全球心理学领域也被广泛引用，用来比喻《人》在经历创伤后的成长与重生。"
+    },
+    {
+        word: "生きがい",
+        reading: "Ikigai（いきがい）",
+        meaning: "活着的意义 / 每天醒来的理由",
+        content: "由【生き】（活着）和【甲斐】（价值、意义）组成。\n\n它不一定是宏大的人生目标，可以是照顾孙子、种花、做手工等日常小事。冲绳长寿老人的秘诀之一就是拥有明确的 Ikigai。\n\n>>孫の顔を見ることが、私の生きがいです。|看到孙子的笑脸，就是我活着的意义。\n\n《彼》は退職後、新しい生きがいを見つけた。"
+    },
+    {
+        word: "猫舌",
+        reading: "Nekojita（ねこじた）",
+        meaning: "怕烫的舌头（像猫一样）",
+        content: "非常可爱的日常用语 🐱\n\n日本人观察到猫不喜欢热食，便用来形容【不能吃烫的人】。类似的动物相关表达还有：\n\n>>私は猫舌なので、ラーメンはいつも冷ましてから食べます。|我怕烫，所以吃拉面总是等凉了再吃。\n\n【猫の手も借りたい】：忙得连猫的手都想借\n【猫かぶり】：装乖、假装老实\n【猫ばば】：捡到东西据为己有"
+    },
+    {
+        word: "七転び八起き",
+        reading: "Nana Korobi Ya Oki（ななころびやおき）",
+        meaning: "七次跌倒，八次站起",
+        content: "[文化]日本最著名的谚语之一，象征【不屈不挠】的精神。\n\n注意是八次站起而不是七次——多出来的那一次代表着：无论失败多少次，永远要多站起来一次。\n\n>>七転び八起きの精神で、何度でも挑戦する。|以百折不挠的精神，无论多少次都要继续挑战。\n\n《私たち》はこの失敗から学び、また立ち上がる。"
+    },
+    {
+        word: "幽玄",
+        reading: "Yūgen（ゆうげん）",
+        meaning: "深邃幽远、不可言喻之美",
+        content: "[文化]能剧大师世阿弥提出的美学概念。\n\n指那种无法用语言完全表达的、含蓄而深远的美。如同薄雾笼罩的山峦，【留白比直白更有力量】。\n\n>>この絵には幽玄の美しさがある。|这幅画有一种深邃幽远的美。\n\n与侘寂（接受不完美）、物哀（感叹无常）并列为日本三大美学理念，三者共同构成了日本人对世界的独特感知方式。"
+    },
+    {
+        word:"动词四分类 ①",
+        reading:"金田一春彦分类法",
+        meaning:"第一类：状态动词",
+        content: `[语法]金田一春彦将日语动词按【语义特征】分为四大类。\n\n第一类是【状态动词】，表示持续存在的状态，而非动作。\n\n特点：\n· 一般【不使用ている】形式（因为本身就表示状态）\n· 没有命令形（无法命令一个状态发生）\n\n常见词：【ある】（有）、【いる】（在）、【できる】（能够）、【わかる】（明白）、【似る】（像）\n\n>>ここに私の傘がある。|这里有一把我的伞。\n>>あの人は日本語がわかる。|那个人懂日语。`
+    },
+    {
+        word:"动词四分类 ②",
+        reading:"金田一春彦分类法",
+        meaning:"第二类：持续动词",
+        content: `[语法]第二类是【持续动词】，表示需要时间持续进行的动作。\n\n特点：\n· ている表示【正在进行】\n· 可以使用命令形\n\n常见词：【食べる】（吃）、【読む】（读）、【走る】（跑）、【書く】（写）、【話す】（说）\n\n>>今、ご飯を食べている。|现在正在吃饭。\n>>本を読んでいます。|正在读书。\n\n与瞬间动词的关键区别：持续动词的ている强调【动作正在进行中】。`
+    },
+    {
+        word:"动词四分类 ③",
+        reading:"金田一春彦分类法",
+        meaning:"第三类：瞬间动词",
+        content: `[语法]第三类是【瞬间动词】，表示瞬间完成的动作或变化。\n\n特点：\n· ている表示【变化后的结果状态】，而非正在进行\n· 原形通常表示将来\n\n常见词：【死ぬ】（死）、【着く】（到达）、【始まる】（开始）、【止まる】（停止）、【結婚する】（结婚）\n\n>>電車が行った。|电车走了。（瞬间完成）\n>>電車がもう着いている。|电车已经到了。（结果状态）\n\n>>父はもう死んでいる。|父亲已经去世了。（结果状态，不是"正在死"）`
+    },
+    {
+        word:"动词四分类 ④",
+        reading:"金田一春彦分类法",
+        meaning:"第四类：第四种动词",
+        content: `[语法]第四类又称【现象动词】，表示某种现象的发生，通常以ている的形式出现。\n\n特点：\n· ている表示【现象正在持续发生】\n· 原形较少单独使用\n\n常见词：【晴れる】（天晴）、【光る】（发光）、【続く】（持续）\n\n>>今日は晴れている。|今天天气晴朗。\n>>星が光っている。|星星在闪烁。\n\n这类词描述的是自然现象或持续性事件，ている形式是最自然的使用方式。`
+    },
+    {
+        word:"意志动词 vs 非意志动词",
+        reading:"Yuishi Dōshi vs Hi-Ishi Dōshi",
+        meaning:"能否由人的意志控制",
+        content: `[语法]这是日语语法中一组非常重要的分类。\n\n【意志动词】：可以由人的意志自由控制的动作。\n如：食べる、走る、書く、考える\n\n【非意志动词】：不由人的意志控制，自然发生或描述状态。\n如：雨が降る、花が咲く、できる、わかる\n\n>>私は毎日走る。|我每天跑步。（意志动词，可以自主决定）\n>>雨が降る。|下雨。（非意志动词，人无法控制）\n\n这个区分对理解【命令形】、【たい】、【可能形】等语法至关重要。`
+    },
+    {
+        word:"无标可能",
+        reading:"非意志动词没有可能形式",
+        meaning:"非意志动词本身就是可能的",
+        content: `[语法]日语中有一个容易被忽略的规则：\n\n【非意志动词】本身就含有"可能"的语义，因此【不需要也不能】变成可能形。\n\n例如：\n· わかる（明白）→ 《×》わかれる\n· できる（能够）→ 《×》できられる\n· 見える（看得见）→ 《×》見えられる\n\n>>日本語がわかる。|我懂日语。（已经表达了"能懂"）\n>>山が見える。|看得见山。（已经表达了"能看到"）\n\n只有【意志动词】才需要变成可能形来表达"能够做某事"。`
+    },
+    {
+        word:"たい的不可能三角",
+        reading:"三个条件不能同时满足",
+        meaning:"主语为二/三人称 · 句末 · 陈述句",
+        content: `[语法]日语中【たい】的使用有一个著名的"不可能三角"规则。\n\n以下三个条件【不能同时满足】：\n· 主语是【第二或第三人称】\n· たい位于【句子末尾】\n· 句子是【陈述句】\n\n如果主语是"我"，三个条件可以满足：\n>>私は寿司が食べたい。|我想吃寿司。《〇》\n\n如果主语是别人，则必须打破至少一个条件：\n>>彼は寿司が食べたいそうだ。|听说他想吃寿司。（加了そうだ，不在句末）\n>>彼は寿司が食べたがっている。|他表现出想吃的样子。（变成たがる）`
+    },
+    {
+        word:"使役动词的自他性",
+        reading:"Shieki Dōshi no Ji-Ta-Sei",
+        meaning:"使役形式改变动词的自他属性",
+        content: `[语法]使役动词的自他性是一个容易出错的知识点。\n\n核心原则：【自动词的使役形】在句法功能上相当于【他动词】，需要宾语を。\n\n>>子供を走らせる。|让孩子跑。（自动词走る → 使役走らせる，用を）\n\n注意区分：\n· 【発展させる】（发展，使役）→ 経済を発展させる\n· 【形成する】（形成，他动词）→ 習慣を形成する\n\n>>経済を発展させる。|发展经济。\n>>いい習慣を形成する。|养成好习惯。\n\n使役形式让原本不能带宾语的自动词获得了【带宾语的能力】。`
+    },
+    {
+        word:"无标被动",
+        reading:"捕まる不能变成被动",
+        meaning:"有些动词本身就含被动意义",
+        content: `[语法]日语中有些动词【本身就含有被动的语义】，不需要也不能再变成被动形式。\n\n最典型的例子是【捕まる】（被捕）：\n· 捕まる → 本身已经是"被抓"的意思\n· 《×》捕まられる → 这种形式是错误的\n\n类似词汇：\n· 【見つかる】（被发现）\n· 【壊れる】（坏掉）\n· 【伝わる】（被传达）\n\n>>犯人が捕まった。|犯人被捕了。（不是"被被捕"）\n>>鍵が見つかった。|钥匙被找到了。\n\n这些词被称为【无标被动】，即没有被动标记但语义为被动。`
+    },
+    {
+        word:"自动词的使役放任",
+        reading:"自动词使役 + に",
+        meaning:"放任某人做某事",
+        content: `[语法]自动词的使役形式除了表示"强制"，还可以表示【放任、允许】。\n\n关键区别在助词：\n· 【を】+ 使役：强调强制、让某人做\n· 【に】+ 使役：强调放任、让某人去做\n\n>>子供を泳がせる。|让孩子游泳。（可能是强制的）\n>>子供に泳がせる。|让孩子去游泳。（放任、允许）\n\n>>生徒に自由に討論させる。|让学生们自由讨论。（放任）\n\n用【に】时，说话者的态度是"不干涉、任其自然"，这在教育、育儿等语境中非常常见。`
+    },
+    {
+        word:"间接被动的身体部位",
+        reading:"足を踏まれた ≠ 足が踏まれた",
+        meaning:"受害被动中身体部位的表达",
+        content: `[语法]日语间接被动（受害被动）中，涉及身体部位时有固定的表达方式。\n\n【错误】：\n>>《×》私の足は隣の人に踏まれた。\n\n【正确】：\n>>《〇》私は隣の人に足を踏まれた。\n\n规则：身体部位是【受害的对象】，不是句子的主语。主语是【受影响的人】（私）。\n\n>>私は犬に手を噛まれた。|我被狗咬了手。\n>>子供はお母さんに頭を撫でられた。|孩子被妈妈摸了头。\n\n结构固定为：【人】は/が + 施事者に + 身体部位を + 被动动词`
+    },
+    {
+        word:"~時の相对时态",
+        reading:"Toki no Sōtai Jitai",
+        meaning:"~时表示相对于主句的时间关系",
+        content: `[语法]日语中【~時】从句的动词时态是【相对的】，取决于它与主句动作的先后关系。\n\n【~ている時】= 动作正在进行时：\n>>食べている時、電話が鳴った。|正在吃饭的时候，电话响了。\n\n【~た時】= 动作完成之后：\n>>食べた時、お腹がいっぱいだった。|吃完之后，肚子很饱。\n\n【~る時】= 动作发生之前：\n>>食べる時、手を洗う。|吃饭之前洗手。\n\n同一个动词，因为与主句的时间关系不同，分别使用る、ている、た三种形式。`
+    },
+    {
+        word:"ていた時の绝对时态",
+        reading:"Toki no Zettai Jitai",
+        meaning:"ていた表示过去某一时刻正在进行的动作",
+        content: `[语法]与时的相对时态不同，【~ていた時】使用的是【绝对时态】。\n\nていた中的た表示的是【过去】这个绝对时间点，ている表示该时间点上动作正在进行。\n\n>>昨日の午後5時に何をしていた？|昨天下午5点你在做什么？\n>>その時、私は本を読んでいた。|那个时候，我正在读书。\n\n这里的ていた不是"相对于主句"的时间，而是【固定在过去的某个时刻】正在进行的动作。\n\n简单记忆：ている = 现在正在，ていた = 过去某个时刻正在。`
+    },
+        {
+        word: "无生命主语 + 意志动词",
+        reading: "Mu-Seimei Shugo",
+        meaning: "无生命名词作主语时一般不用意志动词",
+        content: `[文化]日语中有一个容易被忽视的规则：\n\n【无生命名词】作主语时，谓语动词一般【不使用意志动词】。\n\n因为无生命的事物没有意志，无法自主执行动作。中文里常见的拟人化表达，直译成日语往往不自然。\n\n【不自然 → 自然】：\n>>《△》大雨は試合を止めた。|大雨中断了比赛。\n>>《〇》大雨のせいで、試合が中止になった。|因为大雨，比赛被取消了。\n\n>>《△》大雨は試合を止めなかった。|大雨没有阻止比赛。\n>>《〇》大雨にもかかわらず、試合が続いた。|尽管下大雨，比赛仍继续进行。\n\n>>《△》この鍵はあなたに新しい世界への扉を開けてあげる。|这把钥匙为你打开新世界的大门。\n>>《〇》この鍵で、新しい世界への扉が開く。|用这把钥匙，能打开新世界的大门。\n\n>>《△》この道はあなたを駅に導ける。|这条路可以带你到车站。\n>>《〇》この道に沿って行けば、駅に着く。|沿着这条路走就能到车站。\n\n>>《△》私たちの不完全さこそ、今の私たちを作り出した。|正是我们的不完美造就了现在的我们。\n>>《〇》不完全だからこそ、今の私たちがある。|正因为不完美，才有了现在的我们。\n\n核心原则：中文习惯让无生命事物做【施事者】，日语则倾向于将其处理为【原因、手段或背景】，避免赋予其意志性。`
+    },
+    {
+        word:"无生命主语 + 意志动词",
+        reading:"Mu-Seimei Shugo",
+        meaning:"无生命名词作主语时一般不用意志动词",
+        content: `[语法]日语中有一个容易被忽视的规则：\n\n【无生命名词】作主语时，谓语动词一般【不使用意志动词】。\n\n因为无生命的事物没有意志，无法自主执行动作。\n\n【自然】：\n>>風が吹いている。|风在吹。（非意志动词）\n>>花が咲いている。|花在开。（非意志动词）\n\n【不自然】：\n>>《×》風が走っている。|风在跑。（意志动词，不自然）\n\n>>時間が流れる。|时间流逝。《〇》\n>>《×》時間が勉強する。|时间学习。《×》\n\n如果要让无生命主语搭配意志动词，通常需要【比喻或拟人】的修辞语境。`
+    },
+    {
+        word:"无法辨别的歧义句",
+        reading:"頭が赤い魚を食べる猫",
+        meaning:"没有语境时取概率最大的默认含义",
+        content: `[语法]日语的修饰关系有时会产生歧义，没有语境时无法确定。\n\n经典例句：\n>>頭が赤い魚を食べる猫\n\n三种可能的理解：\n① （頭が赤い）魚を食べる猫 → 吃【红头鱼】的猫\n② 頭が赤い（魚を食べる猫） → 【头是红色的】吃鱼猫\n③ （頭が赤い魚を）食べる猫 → 吃【红头鱼】的猫\n\n没有上下文时，人们倾向于选择【概率最大的理解】，通常是①或②。\n\n>>白い服を着た女の子\n同样有歧义：穿白色衣服的女孩？还是白色的（穿衣服的女孩）？\n\n日语通过语境和常识来消除歧义，这也是日语"暧昧"特性的体现之一。`
+    },
+    {
+        word:"持续/瞬间动词的时态",
+        reading:"Keizoku · Shunkan Dōshi",
+        meaning:"原形通常表示将来",
+        content: `[语法]对于【持续动词】和【瞬间动词】，它们的原形（辞书形）通常表示【将来】。\n\n>>明日、映画を見る。|明天看电影。（一般将来时）\n>>来月、日本に行く。|下个月去日本。（一般将来时）\n\n但在有语境或时间状语提示的情况下，也可以表示【习惯或客观真理】：\n>>私は毎朝6時に起きる。|我每天早上6点起床。（习惯）\n>>太陽は東から昇る。|太阳从东方升起。（客观真理）\n\n注意：这与状态动词不同，状态动词的原形通常表示的是【现在的状态】。`
+    },
+    {
+        word:"状态动词的时态",
+        reading:"Jōtai Dōshi no Jitai",
+        meaning:"原形通常表示现在的状态",
+        content: `[语法]对于【状态动词】，它们的原形通常表示【现在的状态】（一般现在时）。\n\n>>ここに山がある。|这里有座山。（现在的状态）\n>>日本語がわかる。|我懂日语。（现在的能力）\n\n在有语境或时间状语提示的情况下，也可以表示【将来】，但相对较少：\n>>明日なら時間がある。|明天的话就有时间。（将来）\n>>来月、お金ができる。|下个月就有钱了。（将来）\n\n与持续动词、瞬间动词正好相反：\n· 持续/瞬间动词原形 → 通常【将来】\n· 状态动词原形 → 通常【现在】`
+    },
+    {
+        word:"ている ① 习惯反复",
+        reading:"Te-Iru no Shūkan",
+        meaning:"表示习惯性反复的动作",
+        content: `[语法]ている除了表示"正在进行"和"结果状态"，还可以表示【习惯性反复的动作】。\n\n>>私は毎日日本語を勉強している。|我每天都在学日语。\n>>彼は毎朝ジョギングしている。|他每天早上跑步。\n\n这种用法强调的不是"此刻正在做"，而是【作为一种习惯持续在进行】。\n\n>>週末はたいてい図書館に行っている。|周末一般去图书馆。\n\n与简单原形表示习惯的区别：\n· 勉強する：我学日语。（客观陈述）\n· 勉強している：我【一直在】学日语。（强调持续性和投入感）`
+    },
+    {
+        word:"ている ② 身份职业",
+        reading:"Te-Iru no Mibun",
+        meaning:"表示身份和职业",
+        content: `[语法]ている可以表示某人的【身份、职业或长期状态】。\n\n>>私は日本語を教えている。|我是日语老师。（教日语是我的职业）\n>>彼は医者をしている。|他是医生。\n\n注意：这里的ている不是"正在教书"，而是表示【从事这个职业】。\n\n>>彼女は大学で研究している。|她在大学做研究。（身份是研究员）\n\n如果去掉ている：\n>>私は日本語を教える。|我教日语。（只是一个动作陈述）\n>>彼は医者をする。|（不自然，一般不这样说）\n\n身份职业的表达是ている的一个【高频且实用】的用法。`
+    },
+    {
+        word:"ている ③ 经验记录",
+        reading:"Te-Iru no Keiken/Kiroku",
+        meaning:"表示经验和记录（冷门用法）",
+        content: `[语法]这是一个非常【冷门】但存在的ている用法。\n\n在警局调查案件、填写记录表等场景中，描述过去某个时间点发生了什么时，用【ている】而不是た形。\n\n>>午後5時10分、容疑者が店に入っている。|下午5:10，嫌疑人进入了店内。\n>>午後6時、現場を離れている。|下午6:00，离开了现场。\n\n这里的ている不是"正在进入"，而是表示【事件记录】，类似于"发生了这件事，记录在案"。\n\n这种用法主要出现在：\n· 警方调查报告\n· 监控记录描述\n· 日程/事件时间线\n\n日常对话中几乎不会遇到，但阅读新闻报道时偶尔会出现。`
+    },
+    {
+        word:"た ① 发现与回想",
+        reading:"Ta no Hakken/Souki",
+        meaning:"た表示突然发现或回想起来",
+        content: `[语法]た形除了表示过去时，还可以表示【突然发现】或【回想起来】的语气。\n\n【发现】：\n>>あ、いた！|啊，找到了！（发现某人）\n>>あ、忘れてた！|啊，忘了！（发现忘记了）\n\n【回想】：\n>>そうだ、昨日は雨だった。|对了，昨天下雨来着。\n\n这种用法中的た不表示"过去"，而是表示说话者【意识到的瞬间】。\n\n>>あ、こんなところにいた！|啊，你在这种地方！（突然发现）\n\n常见于口语中突然想起或发现某事时的感叹，语气轻快自然。`
+    },
+    {
+        word:"た ② 感叹",
+        reading:"Ta no Kangei",
+        meaning:"た表示感叹语气",
+        content: `[语法]た形可以用于【感叹句】，表达强烈的感情。\n\n>>やった！|太好了！做到了！\n>>美味しかった！|真好吃啊！\n>>きれいだった！|真漂亮啊！\n\n这里的た不是表示过去，而是【加强感叹的语气】。\n\n如果用现在时对比：\n>>美味しい！|好吃！（单纯的当下感受）\n>>美味しかった！|好吃啊！（带有回味和强烈感叹）\n\n这种用法常见于：\n· 品尝食物后的赞叹\n· 看到美景时的感慨\n· 完成某事后的满足感\n\n是日语口语中非常【自然且高频】的感叹表达。`
+    },
+    {
+        word:"た ③ 修饰名词的状态",
+        reading:"Ta no Shuushoku",
+        meaning:"た修饰名词时相当于ている",
+        content: `[语法]た形修饰名词时，可以表示【状态】，相当于ている。通常用于瞬间动词和第四类动词。\n\n>>開いたドア。|开着的门。（= 開いているドア）\n>>曲がった道。|弯曲的道路。（= 曲がっている道）\n>>枯れた花。|枯萎的花。（= 枯れている花）\n\n注意：这种用法【主要限于】瞬间动词和第四类动词。\n\n>>咲いた桜。|盛开的樱花。（= 咲いている桜）\n>>晴れた空。|晴朗的天空。（= 晴れている空）\n\n持续动词的た修饰名词时通常不表示状态，而是表示过去完成的动作：\n>>食べた人。|吃了的人。（过去动作，非状态）`
+    },
+    {
+        word:"调型规律 ① て形/た形",
+        reading:"Akusento Kiseki",
+        meaning:"同时满足两个条件则前移一拍",
+        content: `[语法]て形和た形的调型变化规律【完全相同】。\n\n判断规则：如果动词【同时满足】以下两个条件，则变形后调型【前移一拍】：\n· 该动词为【二类动词】\n· 该动词的调型【不为◎或①】\n\n否则，调型【保持不变】。\n\n示例：\n· 食べる②（二类动词，调型为②）→ 食べて 调型前移一拍\n· 見る①（二类动词，调型为①）→ 見て 调型不变\n· 行く②（一类动词）→ 行って 调型不变\n\n记忆口诀：【二类且非◎①，则前移一拍；其余不变。】`
+    },
+    {
+        word:"调型规律 ② ない形",
+        reading:"Akusento Kiseki",
+        meaning:"◎型有两种读法，其余在な前降调",
+        content: `[语法]ない形的调型规律取决于动词原形的调型。\n\n如果动词调型为【◎】，变形后有以下【两种读法】：\n· 在な后降低音调\n· 仍为◎型\n\n如果动词调型【不为◎】，变形后在【な前】降低音调。\n\n示例：\n· 書く① → 書かない（な前降调）\n· 食べる② → 食べない（な前降调）\n· 見る◎ → 見ない（な后降调 或 仍为◎）\n\n◎型动词的ない形有两种合法读法，实际使用中可以根据语流选择更自然的一种。`
+    },
+    {
+        word:"调型规律 ③ ます形",
+        reading:"Akusento Kiseki",
+        meaning:"所有动词在ま后降调",
+        content: `[语法]ます形的调型规律是【最简单的】。\n\n规则：所有动词变形后，均在【ま后】降低音调。\n\n示例：\n· 食べる → 食べます（ま后降调）\n· 書く → 書きます（ま后降调）\n· 見る → 見ます（ま后降调）\n· 行く → 行きます（ま后降调）\n\n这条规律【没有例外】，不需要区分动词类别或原形调型。\n\n是日语动词变形中调型规律最统一的一种形式，对初学者来说非常友好。`
+    },
+    {
+        word:"调型规律 ④ 意志形",
+        reading:"Akusento Kiseki",
+        meaning:"所有动词在う前降调",
+        content: `[语法]意志形的调型规律同样非常简单。\n\n规则：所有动词变形后，均在【う前】降低音调。\n\n示例：\n· 食べる → 食べよう（う前降调）\n· 書く → 書こう（う前降调）\n· 見る → 見よう（う前降调）\n\n这条规律同样【没有例外】。\n\n与ます形类似，意志形的调型规则统一且简单，不需要区分动词类型。`
+    },
+    {
+        word:"调型规律 ⑤ ば形",
+        reading:"Akusento Kiseki",
+        meaning:"◎型在ば前降调，其余不变",
+        content: `[语法]ば形的调型规律取决于动词原形的调型。\n\n如果动词调型为【◎】，变形后在【ば前】降低音调。\n\n如果动词调型【不为◎】，变形后调型【保持不变】。\n\n示例：\n· 見る◎ → 見れば（ば前降调）\n· 書く① → 書けば（调型不变）\n· 食べる② → 食べれば（调型不变）\n\n与ない形的规律有些相似，但注意判断条件不同：ない形是◎型有两种读法，ば形是◎型在ば前降调。`
+    },
+    {
+        word:"调型规律 ⑥ 被动/使役",
+        reading:"Akusento Kiseki",
+        meaning:"◎型仍为◎，其余在る前降调",
+        content: `[语法]被动形式和使役形式的调型规律【完全相同】。\n\n如果动词调型为【◎】，变形后【仍为◎】。\n\n如果动词调型【不为◎】，变形后在【る前】降低音调。\n\n示例（被动）：\n· 見る◎ → 見られる（仍为◎）\n· 食べる② → 食べられる（る前降调）\n\n示例（使役）：\n· 見る◎ → 見させる（仍为◎）\n· 書く① → 書かせる（る前降调）\n\n被动和使役形式共享同一条调型规律，只需记忆一次即可。`
+    },
+    {
+        word:"调型规律 ⑦ 命令形",
+        reading:"Akusento Kiseki",
+        meaning:"所有动词调型不变",
+        content: `[语法]命令形的调型规律是【最简单的】。\n\n规则：所有动词变形后，调型【均不改变】。\n\n示例：\n· 食べる② → 食べろ②（调型不变）\n· 書く① → 書け①（调型不变）\n· 見る① → 見ろ①（调型不变）\n· 行く② → 行け②（调型不变）\n\n这条规律【没有任何例外】。\n\n命令形是所有动词变形中调型处理最简单的形式——完全不需要改变，保持原形调型即可。`
+    }
+];
+
+var images = [
+    { url: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&q=80", caption: "京都 · 竹林小径" },
+    { url: "https://images.unsplash.com/photo-1528360983277-13d9b152cace?w=800&q=80", caption: "东京 · 神社鸟居" },
+    { url: "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=800&q=80", caption: "富士山 · 樱花季" },
+    { url: "https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=800&q=80", caption: "奈良 · 鹿与古寺" },
+    { url: "https://images.unsplash.com/photo-1492571350019-22de08371fd3?w=800&q=80", caption: "大阪 · 夜景灯火" },
+    { url: "https://images.unsplash.com/photo-1504198458649-3128b932f49e?w=800&q=80", caption: "北海道 · 冬日雪景" },
+    { url: "https://images.unsplash.com/photo-1480796927426-f609979314bd?w=800&q=80", caption: "东京塔 · 黄昏" },
+    { url: "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=800&q=80", caption: "镰仓 · 海岸电车" }
+];
+
+// ==================== DOM ====================
+var els = {
+    card: document.getElementById("tipCard"),
+    word: document.getElementById("jpWord"),
+    reading: document.getElementById("jpReading"),
+    meaning: document.getElementById("cnMeaning"),
+    body: document.getElementById("tipBody"),
+    btn: document.getElementById("refreshBtn"),
+    img: document.getElementById("randomImg"),
+    imgCaption: document.getElementById("imgCaption")
+};
+
+var lastTipIndex = -1;
+
+// ==================== 安全解析引擎（无正则转义风险） ====================
+function parseContent(raw) {
+    // 先按双换行分段
+    var paragraphs = raw.split("\n\n");
+    var result = "";
+
+    for (var i = 0; i < paragraphs.length; i++) {
+        var p = paragraphs[i];
+
+        // 文化标签
+        p = p.replace(/\[文化\]/g, '<span class="culture-tag">文化知识</span> ');
+        p = p.replace(/\[语法\]/g, '<span class="culture-tag">语法知识</span> ');
+
+        // 例句块 >>日文|中文
+        p = p.replace(/>>(.+?)\|(.+)/g, function(m, jp, cn) {
+            return '<div class="example-block"><div class="example-jp">' + jp + '</div><div class="example-cn">' + cn + '</div></div>';
+        });
+
+        // 加粗 【】
+        p = p.replace(/【(.+?)】/g, "<strong>$1</strong>");
+
+        // 置灰 《》
+        p = p.replace(/《(.+?)》/g, '<span class="dim">$1</span>');
+
+        // 段内单换行
+        p = p.replace(/\n/g, "<br>");
+
+        result += "<p>" + p + "</p>";
+    }
+
+    return result;
+}
+
+// ==================== 随机（避免连续重复） ====================
+function getRandom(arr, last) {
+    if (arr.length <= 1) return 0;
+    var idx;
+    do { idx = Math.floor(Math.random() * arr.length); } while (idx === last);
+    return idx;
+}
+
+// ==================== 渲染 ====================
+function renderTip(tip) {
+    els.word.textContent = tip.word;
+    els.reading.textContent = tip.reading;
+    els.meaning.textContent = tip.meaning;
+    els.body.innerHTML = parseContent(tip.content);
+}
+
+function renderImage(img) {
+    els.img.src = img.url;
+    els.img.alt = img.caption;
+    els.imgCaption.textContent = img.caption;
+}
+
+// ==================== 切换（仅知识点，图片不变） ====================
+function switchTip() {
+    els.card.classList.add("fade-out");
+    setTimeout(function() {
+        lastTipIndex = getRandom(tips, lastTipIndex);
+        renderTip(tips[lastTipIndex]);
+        els.card.classList.remove("fade-out");
+    }, 400);
+}
+
+// ==================== 初始化 ====================
+window.addEventListener("DOMContentLoaded", function() {
+    renderImage(images[getRandom(images, -1)]);
+    lastTipIndex = getRandom(tips, -1);
+    renderTip(tips[lastTipIndex]);
+});
+
+els.btn.addEventListener("click", switchTip);
+
+document.addEventListener("keydown", function(e) {
+    if (e.code === "Space" || e.code === "Enter") {
+        e.preventDefault();
+        switchTip();
+    }
+});
+</script>
+</body>
+</html>
