@@ -198,7 +198,7 @@
                 if (!sw) throw new Error('Service Worker 未控制当前页面，请刷新重试');
 
                 // 发送下载指令
-                sw.postMessage({ type: 'DOWNLOAD_DICT', url: './dict.js' });
+                sw.postMessage({ type: 'DOWNLOAD_DICT', url: './js/dict.js' });
 
                 // 等待 SW 返回原始文件内容，增加超时检测
                 const rawText = await new Promise((resolve, reject) => {
@@ -292,33 +292,60 @@
         }
 
         // ========== 页面初始化 ==========
-        window.addEventListener('load', async () => {
-            // 注册 Service Worker
+       window.addEventListener('load', async () => {
             if ('serviceWorker' in navigator) {
                 try {
-                    const reg = await navigator.serviceWorker.register('./js/sw.js');
-                    console.log('[Main] SW 注册成功');
+                    const reg = await navigator.serviceWorker.register('./sw.js');
+                    console.log('[Main] SW 注册成功, scope:', reg.scope);
 
-                    // 处理 SW 更新
+                    // ⚡ 不再依赖 ready，改用 controller + 轮询兜底
+                    const waitForController = (timeoutMs = 10000) => {
+                        return new Promise((resolve) => {
+                            // 如果已经有 controller，直接返回
+                            if (navigator.serviceWorker.controller) {
+                                console.log('[Main] Controller 已存在:', navigator.serviceWorker.controller.scriptURL);
+                                return resolve();
+                            }
+
+                            console.log('[Main] 等待 controller...');
+                            const start = Date.now();
+                            const timer = setInterval(() => {
+                                if (navigator.serviceWorker.controller) {
+                                    clearInterval(timer);
+                                    console.log('[Main] Controller 就绪:', navigator.serviceWorker.controller.scriptURL);
+                                    resolve();
+                                } else if (Date.now() - start > timeoutMs) {
+                                    clearInterval(timer);
+                                    console.warn('[Main] Controller 等待超时(10s)，当前 controller:', navigator.serviceWorker.controller);
+                                    resolve(); // 超时也继续，后续逻辑会处理 null 的情况
+                                }
+                            }, 200);
+
+                            // 同时监听 controllerchange 事件
+                            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                                clearInterval(timer);
+                                console.log('[Main] controllerchange 触发, controller:', navigator.serviceWorker.controller?.scriptURL);
+                                resolve();
+                            });
+                        });
+                    };
+
+                    await waitForController();
+
+                    // 处理更新
                     if (reg.waiting) {
-                        console.log('[Main] 发现等待中的 SW，发送 SKIP_WAITING');
+                        console.log('[Main] 发现 waiting SW，发送 SKIP_WAITING');
                         reg.waiting.postMessage({ type: 'SKIP_WAITING' });
                     }
-
                     reg.addEventListener('updatefound', () => {
-                        const newWorker = reg.installing;
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                console.log('[Main] 新 SW 已安装，发送 SKIP_WAITING');
-                                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                        const nw = reg.installing;
+                        nw?.addEventListener('statechange', () => {
+                            console.log('[Main] SW state:', nw.state);
+                            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                                nw.postMessage({ type: 'SKIP_WAITING' });
                             }
                         });
                     });
-
-                    // 等待 SW 就绪
-                    await navigator.serviceWorker.ready;
-                    console.log('[Main] SW 已就绪');
-
                 } catch(e) {
                     console.error('[Main] SW 注册失败:', e);
                 }
