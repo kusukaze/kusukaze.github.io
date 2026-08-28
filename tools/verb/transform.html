@@ -187,59 +187,63 @@
 
     // ========== 下载并安装字典（纯 Fetch + Stream 版本）==========
     async function downloadAndInstallDict() {
-        showProgress('📥 正在下载字典', '连接服务器...', 0);
+    showProgress('📥 正在下载字典', '连接服务器...', 0);
 
-        try {
-            const response = await fetch('./js/dict.js');
-            if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    try {
+        // 【关键修复】禁止服务器压缩，确保 Content-Length 与实际读取字节数一致
+        const response = await fetch('./js/dict.js', {
+            headers: { 'Accept-Encoding': 'identity' }
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 
-            const contentLength = response.headers.get('Content-Length');
-            const total = contentLength ? parseInt(contentLength, 10) : 0;
+        const contentLength = response.headers.get('Content-Length');
+        const total = contentLength ? parseInt(contentLength, 10) : 0;
 
-            // 如果浏览器不支持 stream 或没有 content-length，回退到普通 text()
-            if (!response.body || !total) {
-                showProgress('📥 正在下载字典', '大小未知，请稍候...', 50);
-                const rawText = await response.text();
-                await processDictText(rawText);
-                return;
-            }
-
-            // 使用 ReadableStream 实现带进度的下载
-            const reader = response.body.getReader();
-            let received = 0;
-            const chunks = [];
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                chunks.push(value);
-                received += value.length;
-
-                const pct = Math.round((received / total) * 100);
-                const sizeText = `${formatBytes(received)} / ${formatBytes(total)} (${pct}%)`;
-                showProgress('📥 正在下载字典', sizeText, pct);
-            }
-
-            // 合并 chunks 为文本
-            const decoder = new TextDecoder('utf-8');
-            const rawText = chunks.map(c => decoder.decode(c, { stream: true })).join('')
-                          + decoder.decode(); // flush
-
+        // 如果浏览器不支持 stream 或没有 content-length，回退到普通 text()
+        if (!response.body || !total) {
+            showProgress('📥 正在下载字典', '大小未知，请稍候...', 50);
+            const rawText = await response.text();
             await processDictText(rawText);
-
-        } catch (err) {
-            console.error('字典下载安装失败:', err);
-            showProgress('❌ 字典加载失败', err.message, 0);
-
-            setTimeout(() => {
-                hideProgress();
-                if (confirm(`字典加载失败：${err.message}\n\n是否重新下载？`)) {
-                    clearDictFromDB().then(() => downloadAndInstallDict());
-                }
-            }, 1500);
+            return;
         }
+
+        // 使用 ReadableStream 实现带进度的下载
+        const reader = response.body.getReader();
+        let received = 0;
+        const chunks = [];
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            chunks.push(value);
+            received += value.length;
+
+            // 限制百分比不超过100%，防止因服务器未遵守identity导致溢出
+            const pct = Math.min(100, Math.round((received / total) * 100));
+            const sizeText = `${formatBytes(received)} / ${formatBytes(total)} (${pct}%)`;
+            showProgress('📥 正在下载字典', sizeText, pct);
+        }
+
+        // 合并 chunks 为文本
+        const decoder = new TextDecoder('utf-8');
+        const rawText = chunks.map(c => decoder.decode(c, { stream: true })).join('')
+                      + decoder.decode(); // flush
+
+        await processDictText(rawText);
+
+    } catch (err) {
+        console.error('字典下载安装失败:', err);
+        showProgress('❌ 字典加载失败', err.message, 0);
+
+        setTimeout(() => {
+            hideProgress();
+            if (confirm(`字典加载失败：${err.message}\n\n是否重新下载？`)) {
+                clearDictFromDB().then(() => downloadAndInstallDict());
+            }
+        }, 1500);
     }
+}
 
     // 处理下载完成的字典文本（解压 + 保存）
     async function processDictText(rawText) {
