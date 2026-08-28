@@ -198,7 +198,7 @@
                 if (!sw) throw new Error('Service Worker 未控制当前页面，请刷新重试');
 
                 // 发送下载指令
-                sw.postMessage({ type: 'DOWNLOAD_DICT', url: './js/dict.js' });
+                sw.postMessage({ type: 'DOWNLOAD_DICT', url: './dict.js' });
 
                 // 等待 SW 返回原始文件内容，增加超时检测
                 const rawText = await new Promise((resolve, reject) => {
