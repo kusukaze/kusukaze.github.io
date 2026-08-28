@@ -1,191 +1,349 @@
 <!DOCTYPE html>
 <html>
-<head> 
-<meta charset='utf-8'> 
-<style>
-    .one{
-        font-size: 24px;
-        white-space: pre-line;
-    }
-</style>
-<style>
-    body{text-align:center}
-</style>
-<title>日语动词逆变形</title>
-<link rel='icon' type='image/x-icon' href='icon/7.ico'/>
-<script type='text/javascript' src='js/trans.js'></script>
-<script type='text/javascript' src='js/detrans.js'></script>
-<script type='text/javascript' src='js/romaji.js'></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script type='text/javascript' src='js/dict.js'></script>
-<script type='text/javascript'>
-    function dict_match(d,r)
-    {
-        var type_d = d.type;
-        var type_r = r[1];
+<head>
+        <meta charset='utf-8'>
+        <style>
+    .one { font-size: 24px; white-space: pre-line; }
+    body { text-align: center; margin: 0; padding: 20px; font-family: sans-serif; }
 
-        if(type_d.slice(0,2) == 'vs' && type_r.slice(0,2) == 'vs')
-            return true;
-        if(type_d.slice(0,2) != type_r.slice(0,2))
+    /* ===== 进度条弹窗样式 ===== */
+    #loading-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6); z-index: 9999;
+        display: flex; align-items: center; justify-content: center;
+    }
+    #loading-box {
+        background: #fff; border-radius: 12px; padding: 30px 40px;
+        min-width: 320px; max-width: 90vw; text-align: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    #loading-title { font-size: 18px; margin-bottom: 12px; color: #333; }
+    #loading-desc  { font-size: 13px; margin-bottom: 16px; color: #888; min-height: 18px; }
+    #progress-bar-bg {
+        width: 100%; height: 10px; background: #e0e0e0;
+        border-radius: 5px; overflow: hidden;
+    }
+    #progress-bar-fill {
+        height: 100%; width: 0%; background: #4a90d9;
+        border-radius: 5px; transition: width 0.3s ease;
+    }
+    #loading-percent { font-size: 13px; margin-top: 8px; color: #666; }
+</style>
+        <title>日语动词逆变形</title>
+        <link rel='icon' type='image/x-icon' href='icon/7.ico'/>
+        <script type='text/javascript' src='js/trans.js'></script>
+        <script type='text/javascript' src='js/detrans.js'></script>
+        <script type='text/javascript' src='js/romaji.js'></script>
+        <!-- ⚠️ JSZip 必须在 dict.js 之前加载，因为 dict.js 内部依赖它 -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+        <!-- ⚠️ dict.js 同步加载已移除 -->
+
+        <script type='text/javascript'>
+// ========== 全局字典状态 ==========
+let dictReady = false;
+let dictLoadingPromise = null;
+
+// ========== 进度条 UI 控制 ==========
+function showProgress(title, desc, percent) {
+    document.getElementById('loading-overlay').style.display = 'flex';
+    document.getElementById('loading-title').textContent = title;
+    document.getElementById('loading-desc').textContent = desc;
+    document.getElementById('progress-bar-fill').style.width = percent + '%';
+    document.getElementById('loading-percent').textContent = percent + '%';
+}
+function hideProgress() {
+    document.getElementById('loading-overlay').style.display = 'none';
+}
+
+// ========== IndexedDB（与翻译器页面共用） ==========
+const DB_NAME = 'jp_verb_dict_db';
+const DB_VERSION = 1;
+const STORE_NAME = 'dictText';
+const DICT_KEY = 'main';
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function loadDictFromDB() {
+    try {
+        const db = await openDB();
+        return new Promise((resolve) => {
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const req = tx.objectStore(STORE_NAME).get(DICT_KEY);
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => resolve(null);
+        });
+    } catch (e) { console.warn('[Main] IDB 读取失败:', e); return null; }
+}
+
+async function saveDictToDB(text) {
+    try {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            tx.objectStore(STORE_NAME).put(text, DICT_KEY);
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    } catch (e) { console.warn('[Main] IDB 写入失败:', e); }
+}
+
+// ========== SW 通信下载字典脚本 ==========
+async function downloadDictScript() {
+    const sw = navigator.serviceWorker.controller;
+    if (!sw) throw new Error('Service Worker 未控制当前页面');
+
+    return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('SW 下载超时(60s)')), 60000);
+        const handler = (event) => {
+            if (event.data?.type === 'COMPLETE_TEXT') {
+                clearTimeout(timeout);
+                navigator.serviceWorker.removeEventListener('message', handler);
+                resolve(event.data.text);
+            } else if (event.data?.type === 'DOWNLOAD_ERROR') {
+                clearTimeout(timeout);
+                navigator.serviceWorker.removeEventListener('message', handler);
+                reject(new Error(event.data.message));
+            }
+        };
+        navigator.serviceWorker.addEventListener('message', handler);
+        sw.postMessage({ type: 'DOWNLOAD_DICT', url: '/js/dict.js' });
+    });
+}
+
+// ========== 等待全局 dict 变量就绪 ==========
+function waitForDict(timeoutMs = 30000) {
+    return new Promise((resolve, reject) => {
+        const start = Date.now();
+        const timer = setInterval(() => {
+            // dict.js 解压后会创建全局变量 dict
+            if (typeof dict !== 'undefined' && dict !== null && Array.isArray(dict)) {
+                clearInterval(timer);
+                resolve();
+            } else if (Date.now() - start > timeoutMs) {
+                clearInterval(timer);
+                reject(new Error('等待字典解压完成超时(30s)'));
+            }
+        }, 100);
+    });
+}
+
+// ========== 通过 Blob URL 安全执行脚本 ==========
+function executeScript(text) {
+    const blob = new Blob([text], { type: 'application/javascript' });
+    const url = URL.createObjectURL(blob);
+    const script = document.createElement('script');
+    script.src = url;
+    document.head.appendChild(script);
+    // 清理 Blob URL
+    script.onload = () => URL.revokeObjectURL(url);
+}
+
+// ========== 主动加载字典（带进度条弹窗） ==========
+async function initDict() {
+    try {
+        // 阶段1: 检查缓存
+        showProgress('📖 正在加载字典', '读取本地缓存...', 20);
+        const cached = await loadDictFromDB();
+
+        let scriptText;
+        if (cached) {
+            scriptText = cached;
+            showProgress('📦 正在解压字典', '从缓存加载，解压中...', 50);
+        } else {
+            // 阶段2: 通过 SW 下载
+            showProgress('⬇️ 首次加载字典', '正在下载解压脚本...', 30);
+            scriptText = await downloadDictScript();
+
+            showProgress('💾 正在保存', '写入本地缓存...', 45);
+            await saveDictToDB(scriptText);
+            showProgress('📦 正在解压字典', '下载完成，解压中...', 50);
+        }
+
+        // 阶段3: 执行解压脚本
+        executeScript(scriptText);
+
+        // 阶段4: 等待 dict 全局变量就绪（解压是异步的）
+        showProgress('📦 正在解压字典', 'JSZip 解压中，请稍候...', 60);
+        await waitForDict();
+
+        dictReady = true;
+        showProgress('✅ 字典就绪', '加载完成 (' + dict.length + ' 条)', 100);
+        setTimeout(hideProgress, 600);
+
+    } catch (e) {
+        console.error('[Main] 字典加载失败:', e);
+        showProgress('❌ 字典加载失败', e.message, 0);
+        document.getElementById('progress-bar-fill').style.background = '#c00';
+    }
+}
+
+// ========== 页面初始化 ==========
+window.addEventListener('load', async () => {
+    if ('serviceWorker' in navigator) {
+        try {
+            const reg = await navigator.serviceWorker.register('/sw.js');
+            console.log('[Main] SW 注册成功, scope:', reg.scope);
+
+            const waitForController = (timeoutMs = 10000) => {
+                return new Promise((resolve) => {
+                    if (navigator.serviceWorker.controller) return resolve();
+                    const start = Date.now();
+                    const timer = setInterval(() => {
+                        if (navigator.serviceWorker.controller) { clearInterval(timer); resolve(); }
+                        else if (Date.now() - start > timeoutMs) { clearInterval(timer); resolve(); }
+                    }, 200);
+                    navigator.serviceWorker.addEventListener('controllerchange', () => { clearInterval(timer); resolve(); });
+                });
+            };
+            await waitForController();
+
+            if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            reg.addEventListener('updatefound', () => {
+                const nw = reg.installing;
+                nw?.addEventListener('statechange', () => {
+                    if (nw.state === 'installed' && navigator.serviceWorker.controller) nw.postMessage({ type: 'SKIP_WAITING' });
+                });
+            });
+        } catch (e) { console.error('[Main] SW 注册失败:', e); }
+    }
+
+    // ⚡ 立即主动加载字典
+    dictLoadingPromise = initDict();
+    zload();
+});
+
+// ========== 原有业务逻辑（完全保留） ==========
+function dict_match(d, r) {
+    var type_d = d.type;
+    var type_r = r[1];
+    if (type_d.slice(0,2) == 'vs' && type_r.slice(0,2) == 'vs') return true;
+    if (type_d.slice(0,2) != type_r.slice(0,2)) return false;
+    if (type_d[1] == '2' || type_d[1] == '4') return false;
+    if (type_d.length < 4 && type_r.length < 4 && type_d.slice(0,2) == type_r.slice(0,2)) return true;
+    if (type_d.length > 3 && type_r.length < 4 && type_d.slice(0,2) == type_r.slice(0,2)) {
+        if (type_d == 'v5aru' && r[2].length > 0 && r[2][0].slice(0,1) == 'ま') {
+            if (to_masu(d.kaki,'v5aru') == r[3][0] || to_masu(d.yomi,'v5aru') == r[3][0]) return true;
             return false;
-        if(type_d[1] == '2' || type_d[1] == '4')
+        }
+        if (type_d == 'v5k-s' && r[2].length > 0 && (r[2][0].slice(0,1) == 'て' || r[2][0].slice(0,1) == 'た')) {
+            if (to_te(d.kaki,'v5k-s') == r[3][0] || to_te(d.yomi,'v5k-s') == r[3][0] || to_ta(d.kaki,'v5k-s') == r[3][0] || to_ta(d.yomi,'v5k-s') == r[3][0]) return true;
             return false;
-        if(type_d.length < 4 && type_r.length < 4 && type_d.slice(0,2) == type_r.slice(0,2))
-            return true;
-        if(type_d.length > 3 && type_r.length < 4 && type_d.slice(0,2) == type_r.slice(0,2))
-        {
-            if(type_d == 'v5aru' && r[2].length > 0 && r[2][0].slice(0,1) == 'ま')
-            {
-                
-                if(to_masu(d.kaki,'v5aru') == r[3][0] || to_masu(d.yomi,'v5aru') == r[3][0])
-                    return true;
-                return false;
+        }
+        if (type_d == 'v5u-s' && r[2].length > 0 && (r[2][0].slice(0,1) == 'て' || r[2][0].slice(0,1) == 'た')) {
+            if (to_te(d.kaki,'v5u-s') == r[3][0] || to_te(d.yomi,'v5u-s') == r[3][0] || to_ta(d.kaki,'v5k-s') == r[3][0] || to_ta(d.yomi,'v5k-s') == r[3][0]) return true;
+            return false;
+        }
+        if (type_d == 'v5r-i' && r[2].length > 0 && r[2][0].slice(0,1) == 'な') {
+            if (to_nai(d.kaki,'v5r-i') == r[3][0] || to_nai(d.yomi,'v5r-i') == r[3][0]) return true;
+            return false;
+        }
+        if (type_d == 'v1-s' && r[2].length > 0 && r[2][0].slice(0,1) == '命') {
+            if (to_command(d.kaki,'v1-s') == r[3][0] || to_command(d.yomi,'v1-s') == r[3][0]) return true;
+            return false;
+        }
+    }
+    if (type_d.length > 3 && type_r.length > 3 && type_d == type_r) return true;
+    if (type_d.length < 4 && type_r.length > 3) return false;
+    return true;
+}
+
+function look_up_dict(result) {
+    var ans = [];
+    for (var i = 0; i < dict.length; i++) {
+        for (var j = 0; j < result.length; j++) {
+            if (!dict_match(dict[i], result[j])) continue;
+            kanji = result[j][0];
+            if (dict[i].type.slice(0,2) != 'vs' || result[j][0].slice(-2, result[j][0].length) == 'する') {
+                if (kata_to_hira(dict[i].kaki) == kanji) {
+                    ans.push([result[j][0], dict[i].type, result[j][2], result[j][3]]);
+                    ans[ans.length-1][0] = dict[i].kaki + '(' + dict[i].yomi + ')';
+                } else if (kata_to_hira(dict[i].yomi) == kanji) {
+                    ans.push([result[j][0], dict[i].type, result[j][2], result[j][3]]);
+                    ans[ans.length-1][0] = dict[i].kaki + '(' + kanji + ')';
+                }
             }
-            if(type_d == 'v5k-s' && r[2].length > 0 && (r[2][0].slice(0,1) == 'て' || r[2][0].slice(0,1) == 'た'))
-            {
-                if(to_te(d.kaki,'v5k-s') == r[3][0] || to_te(d.yomi,'v5k-s') == r[3][0] || to_ta(d.kaki,'v5k-s') == r[3][0] || to_ta(d.yomi,'v5k-s') == r[3][0])
-                    return true;
-                return false;
-            }
-            if(type_d == 'v5u-s' && r[2].length > 0 && (r[2][0].slice(0,1) == 'て' || r[2][0].slice(0,1) == 'た'))
-            {
-                if(to_te(d.kaki,'v5u-s') == r[3][0] || to_te(d.yomi,'v5u-s') == r[3][0] || to_ta(d.kaki,'v5k-s') == r[3][0] || to_ta(d.yomi,'v5k-s') == r[3][0])
-                    return true;
-                return false;
-            }
-            if(type_d == 'v5r-i' && r[2].length > 0 && r[2][0].slice(0,1) == 'な')
-            {
-                if(to_nai(d.kaki,'v5r-i') == r[3][0] || to_nai(d.yomi,'v5r-i') == r[3][0])
-                    return true;
-                return false;
-            }
-            if(type_d == 'v1-s' && r[2].length > 0 && r[2][0].slice(0,1) == '命')
-            {
-                if(to_command(d.kaki,'v1-s') == r[3][0] || to_command(d.yomi,'v1-s') == r[3][0])
-                    return true;
-                return false;
+            if (dict[i].type.slice(0,2) == 'vs') {
+                if (dict[i].kaki != '' && kata_to_hira(dict[i].kaki) + 'する' == kanji) {
+                    ans.push([result[j][0], dict[i].type, result[j][2], result[j][3]]);
+                    ans[ans.length-1][0] = dict[i].kaki + 'する(' + dict[i].yomi + 'する)';
+                } else if (kata_to_hira(dict[i].yomi) + 'する' == kanji) {
+                    ans.push([result[j][0], dict[i].type, result[j][2], result[j][3]]);
+                    if (dict[i].kaki != '') ans[ans.length-1][0] = dict[i].kaki + 'する(' + dict[i].yomi + 'する)';
+                    else ans[ans.length-1][0] = dict[i].yomi + 'する';
+                }
             }
         }
-        if(type_d.length > 3 && type_r.length > 3 && type_d == type_r)
-            return true;
-        if(type_d.length < 4 && type_r.length > 3)
-            return false;
-        return true;
     }
-    function look_up_dict(result)
-    {
-        var ans = [];
-        for(var i=0;i<dict.length;i++)
-        {
-            for(var j=0;j<result.length;j++)
-            {
-                if(!dict_match(dict[i],result[j]))
-                    continue;
-                    
-                kanji = result[j][0];
-                if(dict[i].type.slice(0,2) != 'vs' || result[j][0].slice(-2,result[j][0].length) == 'する')
-                {
-                    if(kata_to_hira(dict[i].kaki) == kanji)
-                    {
-                        ans.push([result[j][0],dict[i].type,result[j][2],result[j][3]]);
-                        ans[ans.length-1][0] = dict[i].kaki + '(' + dict[i].yomi + ')';
-                    }
-                    else if(kata_to_hira(dict[i].yomi) == kanji)
-                    {
-                        ans.push([result[j][0],dict[i].type,result[j][2],result[j][3]]);
-                        ans[ans.length-1][0] = dict[i].kaki + '(' + kanji + ')';
-                    }
-                }
-                if(dict[i].type.slice(0,2) == 'vs')
-                {
-                    if(dict[i].kaki != '' && kata_to_hira(dict[i].kaki) + 'する' == kanji)
-                    {
-                        ans.push([result[j][0],dict[i].type,result[j][2],result[j][3]]);
-                        ans[ans.length-1][0] = dict[i].kaki + 'する(' + dict[i].yomi + 'する)';
-                    }  
-                    else if(kata_to_hira(dict[i].yomi) + 'する' == kanji)
-                    {
-                        ans.push([result[j][0],dict[i].type,result[j][2],result[j][3]]);
-                        if(dict[i].kaki != '')
-                            ans[ans.length-1][0] = dict[i].kaki + 'する(' + dict[i].yomi + 'する)';
-                        else
-                            ans[ans.length-1][0] = dict[i].yomi + 'する';
-                    }
-                }
-            }   
-        }
-        //alert(ans);
-        return ans;
-    }
-    function work(x)
-    {
-        var verb = document.getElementById('verb').value;
-        verb = verb.replace(/\s*/g,'');
-        verb = romaji_to_hiragana(verb);
-        verb = kata_to_hira(verb);
-        if(verb == '')
-        {
-            document.getElementById('result').textContent = '';
+    return ans;
+}
+
+async function work(x) {
+    if (!dictReady) {
+        if (dictLoadingPromise) await dictLoadingPromise;
+        if (!dictReady) {
+            document.getElementById('result').textContent = '❌ 字典尚未加载完成，请刷新重试。';
             return;
         }
-        var result = process(verb);
-        result = look_up_dict(result);
-        result = get_result(result);
-/*
-        result = 'var dict = [\n';
-        var cnt=0;
-        for(i=0;i<dict.length;i++)
-        {
-            if(dict[i].type.slice(0,2) != 'vs' && dict[i].type.length > 3)
-            {
-                result = result + '{kaki:\"' + dict[i].kaki + '\",yomi:\"' + dict[i].yomi + '\",type:\"' + dict[i].type + '\"},\n';
-                cnt += 1;
-            }      
-        }
-        alert(cnt);
-        result = result.slice(0,-2) + '\n]';
-*/
-        if(result == '')
-            result = '对不起，未能计算出\"' + verb + '\"的逆变形结果！';
-        document.getElementById('result').textContent = result;
-        document.getElementById('verb').focus();
-        document.getElementById('verb').setSelectionRange(0,document.getElementById('verb').value.length);
     }
-    function IsPC() {
-        var userAgentInfo = navigator.userAgent;
-        var Agents = ["Android", "iPhone",
-            "SymbianOS", "Windows Phone",
-            "iPad", "iPod"];
-        var flag = true;
-        for (var v = 0; v < Agents.length; v++) {
-            if (userAgentInfo.indexOf(Agents[v]) > 0) {
-                flag = false;
-                break;
-            }
-        }
-        return flag;
+    var verb = document.getElementById('verb').value;
+    verb = verb.replace(/\s*/g, '');
+    verb = romaji_to_hiragana(verb);
+    verb = kata_to_hira(verb);
+    if (verb == '') { document.getElementById('result').textContent = ''; return; }
+    var result = process(verb);
+    result = look_up_dict(result);
+    result = get_result(result);
+    if (result == '') result = '对不起，未能计算出"' + verb + '"的逆变形结果！';
+    document.getElementById('result').textContent = result;
+    document.getElementById('verb').focus();
+    document.getElementById('verb').setSelectionRange(0, document.getElementById('verb').value.length);
+}
+
+function IsPC() {
+    var userAgentInfo = navigator.userAgent;
+    var Agents = ["Android", "iPhone", "SymbianOS", "Windows Phone", "iPad", "iPod"];
+    var flag = true;
+    for (var v = 0; v < Agents.length; v++) {
+        if (userAgentInfo.indexOf(Agents[v]) > 0) { flag = false; break; }
     }
-    function zload()
-    {
-        if(!IsPC())
-            window.location.href='J4.html';
-        document.getElementById('verb').focus();
-        document.getElementById('verb').setSelectionRange(0,document.getElementById('verb').value.length);
-    }
+    return flag;
+}
+
+function zload() {
+    if (!IsPC()) window.location.href = 'J4.html';
+    document.getElementById('verb').focus();
+    document.getElementById('verb').setSelectionRange(0, document.getElementById('verb').value.length);
+}
 </script>
 </head>
-<style>
-        body{background:url(pic/pc.png) top left;
-        background-size:100%;
-        background-attachment: fixed;}
-        </style>
-<body onload="zload()" >
+<body>
+
+<!-- ===== 进度条弹窗 ===== -->
+<div id="loading-overlay">
+        <div id="loading-box">
+                <div id="loading-title">📖 正在加载字典</div>
+                <div id="loading-desc">初始化...</div>
+                <div id="progress-bar-bg"><div id="progress-bar-fill"></div></div>
+                <div id="loading-percent">0%</div>
+        </div>
+</div>
+
 <h1>日语动词逆变形器</h1>
 <img src="icon/7.png" width="100" height="100" alt="Kijin Seija" />
 <HR>
 <h1>输入动词(变形后)</h1>
-<input type='text' id='verb' value='食べます' style='font-size:40px'onkeyup=" if(event.keyCode==13) { work(this); }">
+<input type='text' id='verb' value='食べます' style='font-size:40px' onkeyup="if(event.keyCode==13){work(this);}">
 <HR>
-<label id='result' class ='one' style='font-size: 40px;word-break:break-all;word-wrap:break-word;'></label>
+<label id='result' class='one' style='font-size: 40px;word-break:break-all;word-wrap:break-word;'></label>
 </body>
 </html>
