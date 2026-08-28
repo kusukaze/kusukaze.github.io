@@ -288,7 +288,7 @@
         window.addEventListener('load', async () => {
             // 注册 Service Worker
             if ('serviceWorker' in navigator) {
-                try { await navigator.serviceWorker.register('./sw.js'); } catch(e) { console.error('SW注册失败:', e); }
+                try { await navigator.serviceWorker.register('./js/sw.js'); } catch(e) { console.error('SW注册失败:', e); }
             }
 
             // 尝试从本地读取
