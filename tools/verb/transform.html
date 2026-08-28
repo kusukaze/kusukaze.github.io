@@ -204,8 +204,8 @@
                 const rawText = await new Promise((resolve, reject) => {
                     const timeout = setTimeout(() => {
                         navigator.serviceWorker.removeEventListener('message', handler);
-                        reject(new Error('下载超时（30秒无响应），请检查网络或刷新页面'));
-                    }, 600000); // 30秒超时
+                        reject(new Error('下载超时（10分钟无响应），请检查网络或刷新页面'));
+                    }, 600000); // 10分钟超时
 
                     const handler = (event) => {
                         const { type, progress, total, received, text, error } = event.data;
