@@ -165,12 +165,10 @@
         // ========== 核心：通过动态脚本执行 dict.js 并等待 dict 就绪 ==========
         function executeDictScript(text) {
             return new Promise((resolve, reject) => {
-                // 记录当前 dict 长度，用于检测变化
                 const prevLen = window.dict ? window.dict.length : 0;
                 const script = document.createElement('script');
                 script.textContent = text;
 
-                // dict.js 内部是异步的（JSZip解压），需要轮询等待 dict 被填充
                 document.head.appendChild(script);
 
                 let attempts = 0;
@@ -194,13 +192,21 @@
 
             try {
                 if (!('serviceWorker' in navigator)) throw new Error('浏览器不支持 Service Worker');
-                const registration = await navigator.serviceWorker.ready;
+
+                // 使用 controller 而不是 registration.active
+                const sw = navigator.serviceWorker.controller;
+                if (!sw) throw new Error('Service Worker 未控制当前页面，请刷新重试');
 
                 // 发送下载指令
-                registration.active.postMessage({ type: 'DOWNLOAD_DICT', url: './js/dict.js' });
+                sw.postMessage({ type: 'DOWNLOAD_DICT', url: './js/dict.js' });
 
-                // 等待 SW 返回原始文件内容
+                // 等待 SW 返回原始文件内容，增加超时检测
                 const rawText = await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        navigator.serviceWorker.removeEventListener('message', handler);
+                        reject(new Error('下载超时（30秒无响应），请检查网络或刷新页面'));
+                    }, 30000); // 30秒超时
+
                     const handler = (event) => {
                         const { type, progress, total, received, text, error } = event.data;
                         if (type === 'PROGRESS') {
@@ -210,9 +216,11 @@
                                 : `${formatBytes(received)}（大小未知）`;
                             showProgress('📥 正在下载字典', sizeText, pct);
                         } else if (type === 'COMPLETE_TEXT') {
+                            clearTimeout(timeout);
                             navigator.serviceWorker.removeEventListener('message', handler);
                             resolve(text);
                         } else if (type === 'ERROR') {
+                            clearTimeout(timeout);
                             navigator.serviceWorker.removeEventListener('message', handler);
                             reject(new Error(error));
                         }
@@ -236,7 +244,6 @@
                 console.error('字典下载安装失败:', err);
                 showProgress('❌ 字典加载失败', err.message, 0);
 
-                // 弹出确认框让用户选择重试
                 setTimeout(() => {
                     hideProgress();
                     if (confirm(`字典加载失败：${err.message}\n\n是否重新下载？`)) {
@@ -246,7 +253,7 @@
             }
         }
 
-        // ========== 核心查询与变形逻辑（完全保留） ==========
+        // ========== 核心查询与变形逻辑 ==========
         function look_up_dict(kanji) {
             var ans = [[],[]];
             kanji = kata_to_hira(kanji);
@@ -278,7 +285,7 @@
                 if(dan[1] != '1' && dan[1] != '5' && dan[1] != 's' && dan[1] != 'k') continue;
                 result = result + get_result(dict_result[0][i],dan) + '\n\n';
             }
-            if(result == '') result = '找不到"' + verb + '"，请检查是否正确地输入了现代日语的动词。';
+            if(result == '') result = '找不到"' + verb + '"，请检查是否正确的输入了现代日语的动词。';
             document.getElementById('result').textContent = result;
             document.getElementById('verb').focus();
             document.getElementById('verb').setSelectionRange(0,document.getElementById('verb').value.length);
@@ -288,7 +295,33 @@
         window.addEventListener('load', async () => {
             // 注册 Service Worker
             if ('serviceWorker' in navigator) {
-                try { await navigator.serviceWorker.register('./js/sw.js'); } catch(e) { console.error('SW注册失败:', e); }
+                try {
+                    const reg = await navigator.serviceWorker.register('./js/sw.js');
+                    console.log('[Main] SW 注册成功');
+
+                    // 处理 SW 更新
+                    if (reg.waiting) {
+                        console.log('[Main] 发现等待中的 SW，发送 SKIP_WAITING');
+                        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    }
+
+                    reg.addEventListener('updatefound', () => {
+                        const newWorker = reg.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                console.log('[Main] 新 SW 已安装，发送 SKIP_WAITING');
+                                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                            }
+                        });
+                    });
+
+                    // 等待 SW 就绪
+                    await navigator.serviceWorker.ready;
+                    console.log('[Main] SW 已就绪');
+
+                } catch(e) {
+                    console.error('[Main] SW 注册失败:', e);
+                }
             }
 
             // 尝试从本地读取
