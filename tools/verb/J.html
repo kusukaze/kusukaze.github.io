@@ -205,7 +205,7 @@
                     const timeout = setTimeout(() => {
                         navigator.serviceWorker.removeEventListener('message', handler);
                         reject(new Error('下载超时（30秒无响应），请检查网络或刷新页面'));
-                    }, 30000); // 30秒超时
+                    }, 600000); // 30秒超时
 
                     const handler = (event) => {
                         const { type, progress, total, received, text, error } = event.data;
