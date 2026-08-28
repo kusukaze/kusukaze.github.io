@@ -5,660 +5,308 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>日语动词变形器</title>
         <link rel='icon' type='image/x-icon' href='icon/6.ico'/>
-
         <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: system-ui, -apple-system, "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+            font-family: system-ui, -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            color: #333;
+            min-height: 100vh; padding: 20px; color: #333;
         }
-
         .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
+            max-width: 900px; margin: 0 auto; background: white;
+            border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;
         }
-
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
+            color: white; padding: 30px; text-align: center;
         }
-
-        .header h1 {
-            font-size: 32px;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .content {
-            padding: 40px;
-        }
-
-        .input-section {
-            margin-bottom: 30px;
-        }
-
-        .input-label {
-            display: block;
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 15px;
-            color: #555;
-        }
-
-        .input-wrapper {
-            position: relative;
-        }
-
+        .header h1 { font-size: 32px; margin-bottom: 10px; }
+        .header p { font-size: 14px; opacity: 0.9; }
+        .content { padding: 40px; }
+        .input-label { display: block; font-size: 18px; font-weight: 600; margin-bottom: 15px; color: #555; }
         #verb {
-            width: 100%;
-            font-size: 28px;
-            padding: 18px 20px;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            outline: none;
-            transition: all 0.3s;
-            font-family: inherit;
+            width: 100%; font-size: 28px; padding: 18px 20px;
+            border: 2px solid #e0e0e0; border-radius: 12px; outline: none;
+            transition: all 0.3s; font-family: inherit;
         }
-
-        #verb:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
+        #verb:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
         .result-section {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 25px;
-            min-height: 200px;
-            white-space: pre-line;
-            font-size: 24px;
-            line-height: 1.8;
-            word-break: break-all;
-            word-wrap: break-word;
+            background: #f8f9fa; border-radius: 12px; padding: 25px;
+            min-height: 200px; white-space: pre-line; font-size: 24px;
+            line-height: 1.8; word-break: break-all; word-wrap: break-word;
         }
+        .result-section:empty::before { content: "变形结果将显示在这里..."; color: #999; font-size: 18px; }
 
-        .result-section:empty::before {
-            content: "变形结果将显示在这里...";
-            color: #999;
-            font-size: 18px;
+        /* 全屏加载遮罩 */
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.95); z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.3s;
         }
-
-        .settings-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: white;
-            border: none;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            cursor: pointer;
-            font-size: 24px;
-            transition: all 0.3s;
-            z-index: 100;
-        }
-
-        .settings-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
-        }
-
-        /* 模态框样式 */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            max-width: 500px;
-            width: 90%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-
-        .modal-title {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #333;
-        }
-
-        .modal-desc {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 30px;
-            line-height: 1.6;
-        }
-
-        .btn-group {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .btn {
-            padding: 15px 25px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-family: inherit;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-secondary {
-            background: #f0f0f0;
-            color: #333;
-        }
-
-        .btn-secondary:hover {
-            background: #e0e0e0;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #e0e0e0;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-top: 20px;
-            display: none;
-        }
-
-        .progress-bar.active {
-            display: block;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            width: 0%;
-            transition: width 0.3s;
-        }
-
-        .progress-text {
-            text-align: center;
-            margin-top: 10px;
-            font-size: 14px;
-            color: #666;
-            display: none;
-        }
-
-        .progress-text.active {
-            display: block;
-        }
-
-        .dict-status {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f0f0f0;
-            border-radius: 10px;
-            font-size: 14px;
-            color: #666;
-        }
-
-        .dict-status.loaded {
-            background: #d4edda;
-            color: #155724;
-        }
+        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+        .loading-title { font-size: 22px; font-weight: 600; margin-bottom: 20px; color: #333; }
+        .progress-bar { width: 300px; max-width: 80%; height: 10px; background: #e0e0e0; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); width: 0%; transition: width 0.3s; }
+        .progress-text { margin-top: 12px; font-size: 14px; color: #666; }
 
         @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-
-            .header {
-                padding: 20px;
-            }
-
-            .header h1 {
-                font-size: 24px;
-            }
-
-            .content {
-                padding: 20px;
-            }
-
-            #verb {
-                font-size: 22px;
-                padding: 15px;
-            }
-
-            .result-section {
-                font-size: 20px;
-                padding: 20px;
-            }
-
-            .modal-content {
-                padding: 25px;
-            }
-
-            .settings-btn {
-                width: 45px;
-                height: 45px;
-                font-size: 20px;
-            }
+            body { padding: 10px; }
+            .header { padding: 20px; }
+            .header h1 { font-size: 24px; }
+            .content { padding: 20px; }
+            #verb { font-size: 22px; padding: 15px; }
+            .result-section { font-size: 20px; padding: 20px; }
         }
     </style>
 </head>
 <body>
-<button class="settings-btn" onclick="showDictModal()" title="字典管理">⚙️</button>
+<!-- 全屏加载遮罩 -->
+<div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-title" id="loadingTitle">正在初始化...</div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">准备中...</div>
+</div>
 
 <div class="container">
         <div class="header">
                 <h1>🗾 日语动词变形器</h1>
                 <p>输入动词基本形，查看所有变形形式</p>
         </div>
-
         <div class="content">
-                <div class="input-section">
+                <div style="margin-bottom:30px;">
                         <label class="input-label" for="verb">输入动词（基本形）</label>
-                        <div class="input-wrapper">
-                                <input type='text' id='verb' value='食べる' placeholder="例如：食べる、行く、する" onkeyup="if(event.keyCode==13) { work(this); }">
-                        </div>
+                        <input type='text' id='verb' value='食べる' placeholder="例如：食べる、行く、する" onkeyup="if(event.keyCode==13){work(this);}">
                 </div>
-
                 <div class="result-section" id='result'></div>
         </div>
 </div>
 
-<!-- 字典管理模态框 -->
-<div class="modal" id="dictModal">
-        <div class="modal-content">
-                <h2 class="modal-title">📚 字典管理</h2>
-                <p class="modal-desc">
-                        首次使用需要导入字典文件。您可以选择本地上传字典文件，或从服务器下载。<br>
-                        字典文件将保存在浏览器中，下次使用时无需重新导入。
-                </p>
-
-                <div class="btn-group">
-                        <button class="btn btn-primary" onclick="uploadDict()">
-                                📁 本地上传字典
-                        </button>
-                        <button class="btn btn-primary" onclick="downloadDict()">
-                                ⬇️ 从服务器下载
-                        </button>
-                </div>
-
-                <input type="file" id="fileInput" accept=".json,.js" style="display:none" onchange="handleFileUpload(event)">
-
-                <div class="progress-bar" id="progressBar">
-                        <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <div class="progress-text" id="progressText">准备下载...</div>
-
-                <div class="dict-status" id="dictStatus">
-                        检查字典状态中...
-                </div>
-
-                <button class="btn btn-secondary" onclick="closeDictModal()" style="width:100%; margin-top:15px;">
-                        关闭
-                </button>
-        </div>
-</div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script type='text/javascript' src='js/trans.js'></script>
 <script type='text/javascript' src='js/romaji.js'></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
 <script>
-        // 全局字典变量
         var dict = [];
-
-        // IndexedDB 相关
         const DB_NAME = 'VerbConjugatorDB';
         const DB_VERSION = 1;
         const STORE_NAME = 'dictionary';
         let db = null;
 
-        // 初始化 IndexedDB
+        // ========== IndexedDB 操作 ==========
         function initDB() {
             return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-                request.onerror = () => reject(request.error);
-                request.onsuccess = () => {
-                    db = request.result;
-                    resolve(db);
-                };
-
-                request.onupgradeneeded = (event) => {
-                    const db = event.target.result;
-                    if (!db.objectStoreNames.contains(STORE_NAME)) {
-                        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-                    }
+                const req = indexedDB.open(DB_NAME, DB_VERSION);
+                req.onerror = () => reject(req.error);
+                req.onsuccess = () => { db = req.result; resolve(db); };
+                req.onupgradeneeded = (e) => {
+                    const d = e.target.result;
+                    if (!d.objectStoreNames.contains(STORE_NAME)) d.createObjectStore(STORE_NAME, { keyPath: 'id' });
                 };
             });
         }
 
-        // 从 IndexedDB 加载字典
         async function loadDictFromDB() {
             try {
                 await initDB();
-                return new Promise((resolve, reject) => {
-                    const transaction = db.transaction([STORE_NAME], 'readonly');
-                    const store = transaction.objectStore(STORE_NAME);
-                    const request = store.get('dict');
-
-                    request.onsuccess = () => {
-                        if (request.result && request.result.data) {
-                            resolve(request.result.data);
-                        } else {
-                            resolve(null);
-                        }
-                    };
-                    request.onerror = () => reject(request.error);
+                return new Promise((resolve) => {
+                    const tx = db.transaction([STORE_NAME], 'readonly');
+                    const req = tx.objectStore(STORE_NAME).get('dict');
+                    req.onsuccess = () => resolve(req.result ? req.result.data : null);
+                    req.onerror = () => resolve(null);
                 });
-            } catch (error) {
-                console.error('加载字典失败:', error);
-                return null;
-            }
+            } catch { return null; }
         }
 
-        // 保存字典到 IndexedDB
-        async function saveDictToDB(dictData) {
+        async function saveDictToDB(data) {
             try {
                 await initDB();
-                return new Promise((resolve, reject) => {
-                    const transaction = db.transaction([STORE_NAME], 'readwrite');
-                    const store = transaction.objectStore(STORE_NAME);
-                    const request = store.put({ id: 'dict', data: dictData, timestamp: Date.now() });
-
-                    request.onsuccess = () => resolve(true);
-                    request.onerror = () => reject(request.error);
+                return new Promise((resolve) => {
+                    const tx = db.transaction([STORE_NAME], 'readwrite');
+                    tx.objectStore(STORE_NAME).put({ id: 'dict', data, timestamp: Date.now() });
+                    tx.oncomplete = () => resolve(true);
+                    tx.onerror = () => resolve(false);
                 });
-            } catch (error) {
-                console.error('保存字典失败:', error);
-                return false;
-            }
+            } catch { return false; }
         }
 
-        // 检查字典是否已加载
-        async function checkDictStatus() {
-            const statusEl = document.getElementById('dictStatus');
-            const savedDict = await loadDictFromDB();
-
-            if (savedDict && savedDict.length > 0) {
-                dict = savedDict;
-                statusEl.textContent = `✅ 字典已加载（${dict.length} 个词条）`;
-                statusEl.classList.add('loaded');
-                return true;
-            } else {
-                statusEl.textContent = '⚠️ 未检测到字典文件，请导入字典';
-                statusEl.classList.remove('loaded');
-                return false;
-            }
-        }
-
-        // 显示字典管理模态框
-        async function showDictModal() {
-            document.getElementById('dictModal').classList.add('active');
-            await checkDictStatus();
-        }
-
-        // 关闭模态框
-        function closeDictModal() {
-            document.getElementById('dictModal').classList.remove('active');
-        }
-
-        // 上传本地字典文件
-        function uploadDict() {
-            document.getElementById('fileInput').click();
-        }
-
-        // 处理文件上传
-        async function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const progressBar = document.getElementById('progressBar');
-            const progressFill = document.getElementById('progressFill');
-            const progressText = document.getElementById('progressText');
-
-            progressBar.classList.add('active');
-            progressText.classList.add('active');
-            progressText.textContent = '正在读取文件...';
-            progressFill.style.width = '50%';
-
+        async function clearDictFromDB() {
             try {
-                const text = await file.text();
-                let dictData;
-
-                // 尝试解析 JSON 或 JS 格式
-                if (file.name.endsWith('.json')) {
-                    dictData = JSON.parse(text);
-                } else {
-                    // 尝试从 JS 文件中提取字典数据
-                    const match = text.match(/var\s+dict\s*=\s*(\[.*?\]);/s);
-                    if (match) {
-                        dictData = eval(match[1]);
-                    } else {
-                        throw new Error('无法解析字典文件');
-                    }
-                }
-
-                progressFill.style.width = '80%';
-                progressText.textContent = '正在保存字典...';
-
-                await saveDictToDB(dictData);
-                dict = dictData;
-
-                progressFill.style.width = '100%';
-                progressText.textContent = `✅ 字典导入成功（${dict.length} 个词条）`;
-
-                setTimeout(() => {
-                    progressBar.classList.remove('active');
-                    progressText.classList.remove('active');
-                    checkDictStatus();
-                }, 2000);
-
-            } catch (error) {
-                progressText.textContent = '❌ 导入失败: ' + error.message;
-                progressFill.style.width = '0%';
-                setTimeout(() => {
-                    progressBar.classList.remove('active');
-                    progressText.classList.remove('active');
-                }, 3000);
-            }
-
-            event.target.value = '';
-        }
-
-        // 从服务器下载字典
-        async function downloadDict() {
-            const progressBar = document.getElementById('progressBar');
-            const progressFill = document.getElementById('progressFill');
-            const progressText = document.getElementById('progressText');
-
-            progressBar.classList.add('active');
-            progressText.classList.add('active');
-            progressText.textContent = '正在连接服务器...';
-            progressFill.style.width = '0%';
-
-            try {
-                // 检查 Service Worker 是否支持
-                if (!('serviceWorker' in navigator)) {
-                    throw new Error('浏览器不支持 Service Worker');
-                }
-
-                // 等待 Service Worker 就绪
-                const registration = await navigator.serviceWorker.ready;
-
-                // 发送下载请求到 Service Worker
-                registration.active.postMessage({
-                    type: 'DOWNLOAD_DICT',
-                    url: './js/dict.js' // 字典文件路径
+                await initDB();
+                return new Promise((resolve) => {
+                    const tx = db.transaction([STORE_NAME], 'readwrite');
+                    tx.objectStore(STORE_NAME).delete('dict');
+                    tx.oncomplete = () => resolve(true);
+                    tx.onerror = () => resolve(false);
                 });
-
-                // 监听 Service Worker 消息
-                navigator.serviceWorker.onmessage = async (event) => {
-                    const { type, progress, total, received, data, error } = event.data;
-
-                    if (type === 'PROGRESS') {
-                        const percent = total > 0 ? Math.round((received / total) * 100) : 0;
-                        progressFill.style.width = percent + '%';
-                        progressText.textContent = `下载中: ${formatBytes(received)} / ${formatBytes(total)} (${percent}%)`;
-                    } else if (type === 'COMPLETE') {
-                        progressText.textContent = '正在保存字典...';
-                        progressFill.style.width = '90%';
-
-                        await saveDictToDB(data);
-                        dict = data;
-
-                        progressFill.style.width = '100%';
-                        progressText.textContent = `✅ 字典下载成功（${dict.length} 个词条）`;
-
-                        setTimeout(() => {
-                            progressBar.classList.remove('active');
-                            progressText.classList.remove('active');
-                            checkDictStatus();
-                        }, 2000);
-                    } else if (type === 'ERROR') {
-                        progressText.textContent = '❌ 下载失败: ' + error;
-                        progressFill.style.width = '0%';
-                        setTimeout(() => {
-                            progressBar.classList.remove('active');
-                            progressText.classList.remove('active');
-                        }, 3000);
-                    }
-                };
-
-            } catch (error) {
-                progressText.textContent = '❌ 下载失败: ' + error.message;
-                progressFill.style.width = '0%';
-                setTimeout(() => {
-                    progressBar.classList.remove('active');
-                    progressText.classList.remove('active');
-                }, 3000);
-            }
+            } catch { return false; }
         }
 
-        // 格式化字节数
+        // ========== UI 进度控制 ==========
+        function showProgress(title, text, percent) {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.classList.remove('hidden');
+            if (title) document.getElementById('loadingTitle').textContent = title;
+            if (text !== undefined) document.getElementById('progressText').textContent = text;
+            if (percent !== undefined) document.getElementById('progressFill').style.width = percent + '%';
+        }
+
+        function hideProgress() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+
         function formatBytes(bytes) {
             if (bytes === 0) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
         }
 
-        // 核心查询函数（保持不变）
+        // ========== 核心：通过动态脚本执行 dict.js 并等待 dict 就绪 ==========
+        function executeDictScript(text) {
+            return new Promise((resolve, reject) => {
+                // 记录当前 dict 长度，用于检测变化
+                const prevLen = window.dict ? window.dict.length : 0;
+                const script = document.createElement('script');
+                script.textContent = text;
+
+                // dict.js 内部是异步的（JSZip解压），需要轮询等待 dict 被填充
+                document.head.appendChild(script);
+
+                let attempts = 0;
+                const maxAttempts = 200; // 最多等待 20秒
+                const timer = setInterval(() => {
+                    attempts++;
+                    if (window.dict && window.dict.length > prevLen && window.dict.length > 0) {
+                        clearInterval(timer);
+                        resolve(window.dict);
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(timer);
+                        reject(new Error('字典脚本执行超时，未能生成有效字典数据'));
+                    }
+                }, 100);
+            });
+        }
+
+        // ========== 下载并安装字典 ==========
+        async function downloadAndInstallDict() {
+            showProgress('📥 正在下载字典', '连接服务器...', 0);
+
+            try {
+                if (!('serviceWorker' in navigator)) throw new Error('浏览器不支持 Service Worker');
+                const registration = await navigator.serviceWorker.ready;
+
+                // 发送下载指令
+                registration.active.postMessage({ type: 'DOWNLOAD_DICT', url: './js/dict.js' });
+
+                // 等待 SW 返回原始文件内容
+                const rawText = await new Promise((resolve, reject) => {
+                    const handler = (event) => {
+                        const { type, progress, total, received, text, error } = event.data;
+                        if (type === 'PROGRESS') {
+                            const pct = total > 0 ? Math.round((received / total) * 100) : Math.min(95, Math.round(received / 1024));
+                            const sizeText = total > 0
+                                ? `${formatBytes(received)} / ${formatBytes(total)} (${pct}%)`
+                                : `${formatBytes(received)}（大小未知）`;
+                            showProgress('📥 正在下载字典', sizeText, pct);
+                        } else if (type === 'COMPLETE_TEXT') {
+                            navigator.serviceWorker.removeEventListener('message', handler);
+                            resolve(text);
+                        } else if (type === 'ERROR') {
+                            navigator.serviceWorker.removeEventListener('message', handler);
+                            reject(new Error(error));
+                        }
+                    };
+                    navigator.serviceWorker.addEventListener('message', handler);
+                });
+
+                // 下载完成，开始执行脚本解压字典
+                showProgress('📦 正在解压字典', '请稍候...', 90);
+                const dictData = await executeDictScript(rawText);
+
+                // 保存到 IndexedDB
+                showProgress('💾 正在保存字典', '即将完成...', 95);
+                await saveDictToDB(dictData);
+                dict = dictData;
+
+                showProgress('✅ 字典就绪', `共 ${dict.length} 个词条`, 100);
+                setTimeout(hideProgress, 800);
+
+            } catch (err) {
+                console.error('字典下载安装失败:', err);
+                showProgress('❌ 字典加载失败', err.message, 0);
+
+                // 弹出确认框让用户选择重试
+                setTimeout(() => {
+                    hideProgress();
+                    if (confirm(`字典加载失败：${err.message}\n\n是否重新下载？`)) {
+                        clearDictFromDB().then(() => downloadAndInstallDict());
+                    }
+                }, 1500);
+            }
+        }
+
+        // ========== 核心查询与变形逻辑（完全保留） ==========
         function look_up_dict(kanji) {
             var ans = [[],[]];
             kanji = kata_to_hira(kanji);
             for(var i=0;i<dict.length;i++) {
                 if(kata_to_hira(dict[i].kaki) == kanji || kata_to_hira(dict[i].yomi) == kanji) {
-                    if(dict[i].kaki == '')
-                        ans[0].push(dict[i].yomi);
-                    else
-                        ans[0].push(dict[i].kaki);
-                    if(dict[i].type == 'vs')
-                        ans[0][ans[0].length-1] = ans[0][ans[0].length-1] + 'する';
+                    if(dict[i].kaki == '') ans[0].push(dict[i].yomi);
+                    else ans[0].push(dict[i].kaki);
+                    if(dict[i].type == 'vs') ans[0][ans[0].length-1] = ans[0][ans[0].length-1] + 'する';
                     ans[1].push(dict[i].type);
                 }
                 else if (dict[i].type.slice(0,2) == 'vs' && (dict[i].kaki != '' && kata_to_hira(dict[i].kaki) + 'する' == kanji) || kata_to_hira(dict[i].yomi) + 'する' == kanji) {
-                    if(dict[i].kaki == '')
-                        ans[0].push(dict[i].yomi + 'する');
-                    else
-                        ans[0].push(dict[i].kaki + 'する');
+                    if(dict[i].kaki == '') ans[0].push(dict[i].yomi + 'する');
+                    else ans[0].push(dict[i].kaki + 'する');
                     ans[1].push(dict[i].type);
                 }
             }
             return ans;
         }
 
-        // 核心变形函数（保持不变）
         function work(x) {
             var verb = document.getElementById('verb').value;
             verb = verb.replace(/\s*/g,'');
             verb = romaji_to_hiragana(verb);
-            if(verb == '') {
-                document.getElementById('result').textContent = '';
-                return;
-            }
+            if(verb == '') { document.getElementById('result').textContent = ''; return; }
             var dict_result = look_up_dict(verb);
-
             var result = '';
             for(var i=0;i<dict_result[0].length;i++) {
                 var dan = dict_result[1][i];
-                if(dan[1] != '1' && dan[1] != '5' && dan[1] != 's' && dan[1] != 'k')
-                    continue;
+                if(dan[1] != '1' && dan[1] != '5' && dan[1] != 's' && dan[1] != 'k') continue;
                 result = result + get_result(dict_result[0][i],dan) + '\n\n';
             }
-            if(result == '')
-                result = '找不到"' + verb + '"，请检查是否正确地输入了现代日语的动词。'
+            if(result == '') result = '找不到"' + verb + '"，请检查是否正确地输入了现代日语的动词。';
             document.getElementById('result').textContent = result;
             document.getElementById('verb').focus();
             document.getElementById('verb').setSelectionRange(0,document.getElementById('verb').value.length);
         }
 
-        // 页面加载时初始化
+        // ========== 页面初始化 ==========
         window.addEventListener('load', async () => {
             // 注册 Service Worker
             if ('serviceWorker' in navigator) {
-                try {
-                    await navigator.serviceWorker.register('js/sw.js');
-                } catch (error) {
-                    console.error('Service Worker 注册失败:', error);
-                }
+                try { await navigator.serviceWorker.register('./sw.js'); } catch(e) { console.error('SW注册失败:', e); }
             }
 
-            // 加载字典
-            const hasDict = await checkDictStatus();
+            // 尝试从本地读取
+            showProgress('📖 正在加载字典', '读取本地缓存...', 30);
+            const cached = await loadDictFromDB();
 
-            // 如果没有字典，显示导入模态框
-            if (!hasDict) {
-                setTimeout(() => showDictModal(), 500);
+            if (cached && cached.length > 0) {
+                // 本地有缓存，验证有效性
+                dict = cached;
+                showProgress('✅ 字典就绪', `共 ${dict.length} 个词条（本地缓存）`, 100);
+                setTimeout(hideProgress, 600);
+            } else {
+                // 无缓存，自动下载
+                await downloadAndInstallDict();
             }
 
-            // 聚焦输入框
             document.getElementById('verb').focus();
-            document.getElementById('verb').setSelectionRange(0,document.getElementById('verb').value.length);
+            document.getElementById('verb').setSelectionRange(0, document.getElementById('verb').value.length);
         });
     </script>
 </body>
