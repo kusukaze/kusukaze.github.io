@@ -1,71 +1,210 @@
 <!DOCTYPE html>
-<html>
-<head> 
-<meta charset='utf-8'> 
-<style>
-    .one{
-        font-size: 24px;
-        white-space: pre-line;
-    }
-</style>
-<style>
-    body{text-align:center}
-</style>
-<title>日语动词辅助工具</title>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日语动词辅助工具</title>
+    <style>
+        :root {
+            --primary-color: #2b6cb0;
+            --accent-color: #3182ce;
+            --bg-gradient: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+            --card-bg: rgba(255, 255, 255, 0.96);
+            --text-main: #2d3748;
+            --text-secondary: #4a5568;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
 
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            /* 使用系统默认中文字体栈，不强制指定日语字体 */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            line-height: 1.8;
+            min-height: 100vh;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            color: var(--primary-color);
+            margin-bottom: 0.5em;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: clamp(1rem, 2.5vw, 1.25rem);
+            color: var(--text-secondary);
+            margin-bottom: 2.5em;
+        }
+
+        /* 导航卡片网格 */
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .nav-card {
+            background: var(--card-bg);
+            padding: 28px 20px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--primary-color);
+            font-size: 1.25rem;
+            font-weight: 600;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100px;
+        }
+
+        .nav-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        /* 内容区块 */
+        .section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 30px 35px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow);
+            text-align: left;
+        }
+
+        .section h2 {
+            font-size: 1.6rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--accent-color);
+            display: inline-block;
+        }
+
+        .section ol {
+            padding-left: 1.5em;
+        }
+
+        .section li {
+            font-size: 1.05rem;
+            margin-bottom: 10px;
+            color: var(--text-main);
+        }
+
+        .credit-item {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .credit-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+        .credit-item p {
+            font-size: 1.05rem;
+            margin-bottom: 6px;
+        }
+
+        a.external-link {
+            color: var(--accent-color);
+            word-break: break-all;
+            text-decoration: none;
+            border-bottom: 1px dashed var(--accent-color);
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+
+        a.external-link:hover {
+            color: var(--primary-color);
+            border-bottom-style: solid;
+        }
+
+        .author-badge {
+            display: inline-block;
+            background: var(--accent-color);
+            color: white;
+            padding: 8px 28px;
+            border-radius: 50px;
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 20px 12px; }
+            .section { padding: 20px 18px; }
+            .nav-card { font-size: 1.1rem; padding: 20px; min-height: 80px; }
+        }
+    </style>
 </head>
-<style>
-        body{background:#66ccff;}
-</style>
 <body>
-<font style="font-size:60px">日语动词辅助工具</font>
-<br><br>
-<font style="font-size:40px">欢迎使用日语动词辅助工具。请点击下面的链接进入相应的页面。</font>
-<br><br>
-<a href="transform.html" style="font-size:40px;" title="transform.html">日语动词变形器</a>
-<br><br>
-<a href="de-transform.html" style="font-size:40px;" title="de-transform.html">日语动词逆变形器</a>
-<br><br>
-<a href="JK.html" style="font-size:40px;" title="J4.html">古典日语动词变形器(测试版)</a>
-<br><br>
-<HR>
-<font style="font-size:40px">说明</font>
-<br><br>
-<font style="font-size:30px">1. 本工具旨在帮助日语学习者解决动词变形问题，方便查询和校验。</font>
-<br><br>
-<font style="font-size:30px">2. 虽然进行了一定的测试和资料查阅，但不能保证100%的正确性，因此结果仅供参考。</font>
-<br><br>
-<font style="font-size:30px">3. “变形器”用于将基本形变为各种形式；“逆变形器”用于将已变形的动词变回基本形，并显示变化过程。</font>
-<br><br>
-<font style="font-size:30px">4. 输入支持汉字、平片假名、罗马字三种形式，并可以混合使用。</font>
-<br><br>
-<font style="font-size:30px">5. 按下回车开始查询。</font>
-<br><br>
-<font style="font-size:30px">6. 由于同音、同汉字情况的原因，查询结果可能包括多个单词，请向下滚动页面查看。</font>
-<br><br>
-<font style="font-size:30px">7. 由于懒得做了，所以主页比较简陋。</font>
-<br><br>
-<font style="font-size:30px">8. 祝使用愉快！</font>
-<HR>
-<font style="font-size:40px">作者</font>
-<br>
-<font style="font-size:30px">楠风研究部</font>
-<br><br>
-<font style="font-size:40px">特别鸣谢</font>
-<br><br>
-<font style="font-size:30px">由Kim Ahlström、 Miwa Ahlström和Andrew Plummer创造的在线和英词典Jisho</font>
-<br>
-<a href="https://jisho.org" style="font-size:30px;" title="https://jisho.org">https://jisho.org</a>
-<br><br>
-<font style="font-size:30px">由Jim Breen创造、现由电子词典研究发展中心(EDRDG)管理的电子词典JMdict</font>
-<br>
-<a href="http://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project" style="font-size:30px;" title="http://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project">http://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project</a>
-<br><br>
-<font style="font-size:30px">由东京大学研究生院工学系研究科峯松研究室和信息理工学系研究科广濑研究室创造的在线日语声调辞典OJAD</font>
-<br>
-<a href="http://www.gavo.t.u-tokyo.ac.jp/ojad/chi/pages/home" style="font-size:30px;" title="http://www.gavo.t.u-tokyo.ac.jp/ojad/chi/pages/home">http://www.gavo.t.u-tokyo.ac.jp/ojad/chi/pages/home</a>
-<br><br>
-<font style="font-size:30px">图标和壁纸的作者</font>
-<br>
+
+<div class="container">
+    <h1>日语动词辅助工具</h1>
+    <p class="subtitle">欢迎使用日语动词辅助工具。请点击下面的链接进入相应的页面。</p>
+
+    <div class="nav-grid">
+        <a href="transform.html" class="nav-card" title="transform.html">日语动词变形器</a>
+        <a href="de-transform.html" class="nav-card" title="de-transform.html">日语动词逆变形器</a>
+        <a href="JK.html" class="nav-card" title="J4.html">古典日语动词变形器<br><small style="font-weight:normal;font-size:0.75em;margin-top:4px;">(测试版)</small></a>
+    </div>
+
+    <div class="section">
+        <h2>说明</h2>
+        <ol>
+            <li>本工具旨在帮助日语学习者解决动词变形问题，方便查询和校验。</li>
+            <li>虽然进行了一定的测试和资料查阅，但不能保证100%的正确性，因此结果仅供参考。</li>
+            <li>"变形器"用于将基本形变为各种形式；"逆变形器"用于将已变形的动词变回基本形，并显示变化过程。</li>
+            <li>输入支持汉字、平片假名、罗马字三种形式，并可以混合使用。</li>
+            <li>按下回车开始查询。</li>
+            <li>由于同音、同汉字情况的原因，查询结果可能包括多个单词，请向下滚动页面查看。</li>
+            <li>由于懒得做了，所以主页比较简陋。</li>
+            <li>祝使用愉快！</li>
+        </ol>
+    </div>
+
+    <div class="section">
+        <h2>作者</h2>
+        <div style="text-align:center;">
+            <span class="author-badge">楠风研究部</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>特别鸣谢</h2>
+
+        <div class="credit-item">
+            <p>由Kim Ahlström、 Miwa Ahlström和Andrew Plummer创造的在线和英词典Jisho</p>
+            <a href="https://jisho.org" class="external-link" title="https://jisho.org" target="_blank" rel="noopener noreferrer">https://jisho.org</a>
+        </div>
+
+        <div class="credit-item">
+            <p>由Jim Breen创造、现由电子词典研究发展中心(EDRDG)管理的电子词典JMdict</p>
+            <a href="http://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project" class="external-link" title="http://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project" target="_blank" rel="noopener noreferrer">http://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project</a>
+        </div>
+
+        <div class="credit-item">
+            <p>由东京大学研究生院工学系研究科峯松研究室和信息理工学系研究科广濑研究室创造的在线日语声调辞典OJAD</p>
+            <a href="http://www.gavo.t.u-tokyo.ac.jp/ojad/chi/pages/home" class="external-link" title="http://www.gavo.t.u-tokyo.ac.jp/ojad/chi/pages/home" target="_blank" rel="noopener noreferrer">http://www.gavo.t.u-tokyo.ac.jp/ojad/chi/pages/home</a>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
