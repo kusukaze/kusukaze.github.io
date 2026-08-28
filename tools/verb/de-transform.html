@@ -205,7 +205,7 @@ async function downloadDictScript() {
             }
         };
         navigator.serviceWorker.addEventListener('message', handler);
-        sw.postMessage({ type: 'DOWNLOAD_DICT', url: '/js/dict.js' });
+        sw.postMessage({ type: 'DOWNLOAD_DICT', url: './js/dict.js' });
     });
 }
 
@@ -271,7 +271,7 @@ async function initDict() {
 window.addEventListener('load', async () => {
     if ('serviceWorker' in navigator) {
         try {
-            const reg = await navigator.serviceWorker.register('/sw.js');
+            const reg = await navigator.serviceWorker.register('./sw.js');
             const waitForController = (timeoutMs = 10000) => {
                 return new Promise((resolve) => {
                     if (navigator.serviceWorker.controller) return resolve();
