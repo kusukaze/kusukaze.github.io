@@ -1279,7 +1279,7 @@ async function callLLM(userText) {
   abortController = new AbortController();
 
   try {
-    const url = `${baseUrl.replace(/\/+$/, '')}/v1/chat/completions`;
+    const url = `${baseUrl}`;
     const response = await fetch(url, {
       method: 'POST',
       headers: {
