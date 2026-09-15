@@ -1,43 +1,54 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-        <meta charset='utf-8'>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <title>日语动词逆变形</title>
-        <!-- 图标保留 -->
-        <link rel='icon' type='image/x-icon' href='icon/7.ico'/>
-        <style>
+    <meta charset='utf-8'>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>古典日语动词变形</title>
+    <link rel='icon' type='image/x-icon' href='icon/6.ico'/>
+    <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: system-ui, -apple-system, "Microsoft YaHei", "PingFang SC", sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh; padding: 20px; color: #333;
+            background: linear-gradient(135deg, #d4a574 0%, #8b6914 100%);
+            min-height: 100vh; padding: 20px; color: #3d3d3d;
         }
         .container {
             max-width: 900px; margin: 0 auto; background: white;
             border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;
         }
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #d4a574 0%, #8b6914 100%);
             color: white; padding: 30px; text-align: center;
         }
-        .header h1 { font-size: 32px; margin-bottom: 10px; }
+        .header h1 { font-size: 32px; margin-bottom: 10px; letter-spacing: 2px; }
         .header p { font-size: 14px; opacity: 0.9; }
         .content { padding: 40px; }
         .input-label { display: block; font-size: 18px; font-weight: 600; margin-bottom: 15px; color: #555; }
+        .input-row {
+            display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+        }
         #verb {
-            width: 100%; font-size: 28px; padding: 18px 20px;
+            flex: 1; min-width: 200px; font-size: 28px; padding: 18px 20px;
             border: 2px solid #e0e0e0; border-radius: 12px; outline: none;
             transition: all 0.3s; font-family: inherit; text-align: center;
+            background: #fffdf9;
         }
-        #verb:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+        #verb:focus { border-color: #d4a574; box-shadow: 0 0 0 3px rgba(212,165,116,0.2); }
+        .btn-convert {
+            font-size: 20px; padding: 18px 32px; background: #8b7355;
+            color: white; border: none; border-radius: 12px; cursor: pointer;
+            transition: background 0.3s, transform 0.15s; font-weight: 600;
+            white-space: nowrap;
+        }
+        .btn-convert:hover { background: #6d5a43; }
+        .btn-convert:active { transform: scale(0.97); }
         .result-section {
-            background: #f8f9fa; border-radius: 12px; padding: 25px;
-            min-height: 200px; white-space: pre-line; font-size: 24px;
+            background: #fdfbf7; border-radius: 12px; padding: 25px;
+            min-height: 200px; white-space: pre-line; font-size: 28px;
             line-height: 1.8; word-break: break-all; word-wrap: break-word;
-            color: #2c3e50;
+            color: #3d3d3d; text-align: left; border: 1px solid #ede6da;
         }
-        .result-section:empty::before { content: "逆变形结果将显示在这里..."; color: #999; font-size: 18px; }
+        .result-section:empty::before { content: "变形结果将显示在这里..."; color: #bbb; font-size: 18px; }
 
         /* 全屏加载遮罩 */
         .loading-overlay {
@@ -49,7 +60,7 @@
         .loading-overlay.hidden { opacity: 0; pointer-events: none; }
         .loading-title { font-size: 22px; font-weight: 600; margin-bottom: 20px; color: #333; }
         .progress-bar { width: 300px; max-width: 80%; height: 10px; background: #e0e0e0; border-radius: 10px; overflow: hidden; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); width: 0%; transition: width 0.2s; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #d4a574, #8b6914); width: 0%; transition: width 0.2s; }
         .progress-text { margin-top: 12px; font-size: 14px; color: #666; }
 
         @media (max-width: 768px) {
@@ -58,7 +69,8 @@
             .header h1 { font-size: 24px; }
             .content { padding: 20px; }
             #verb { font-size: 22px; padding: 15px; }
-            .result-section { font-size: 20px; padding: 20px; }
+            .btn-convert { width: 100%; font-size: 18px; padding: 15px; }
+            .result-section { font-size: 22px; padding: 20px; }
         }
     </style>
 </head>
@@ -66,29 +78,32 @@
 
 <!-- 全屏加载遮罩 -->
 <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-title" id="loadingTitle">正在初始化...</div>
-        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <div class="progress-text" id="progressText">准备中...</div>
+    <div class="loading-title" id="loadingTitle">正在初始化...</div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-text" id="progressText">准备中...</div>
 </div>
 
 <div class="container">
-        <div class="header">
-                <h1>日语动词逆变形器</h1>
-                <p>输入变形后的动词，还原为基本形</p>
+    <div class="header">
+        <h1>古典日语动词变形器</h1>
+        <p>输入古典动词终止形，查看所有变形形式</p>
+    </div>
+    <div class="content">
+        <div style="margin-bottom:30px;">
+            <label class="input-label" for="verb">输入动词（终止形）</label>
+            <div class="input-row">
+                <input type='text' id='verb' value='食ぶ' placeholder="例如：食ぶ、書く、す" onkeyup="if(event.keyCode==13){work(this);}">
+                <button class="btn-convert" type="button" onclick="work(this)">开始转换</button>
+            </div>
         </div>
-        <div class="content">
-                <div style="margin-bottom:30px;">
-                        <label class="input-label" for="verb">输入动词（变形后）</label>
-                        <input type='text' id='verb' value='食べます' placeholder="例如：食べた、行きます" onkeyup="if(event.keyCode==13){work(this);}">
-                </div>
-                <div class="result-section" id='result'></div>
-        </div>
+        <hr style="border:none;height:1px;background:linear-gradient(to right,transparent,#d4c5b0,transparent);margin:30px 0;">
+        <div class="result-section" id='result'></div>
+    </div>
 </div>
 
 <!-- 依赖库 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script type='text/javascript' src='js/trans.js'></script>
-<script type='text/javascript' src='js/detrans.js'></script>
+<script type='text/javascript' src='js/kobun_trans.js'></script>
 <script type='text/javascript' src='js/romaji.js'></script>
 
 <script>
@@ -96,7 +111,7 @@
     var dict = [];
     let dictReady = false;
 
-    const DB_NAME = 'VerbConjugatorDB';
+    const DB_NAME = 'KobunVerbDB';
     const DB_VERSION = 1;
     const STORE_NAME = 'dictionary';
     let db = null;
@@ -179,10 +194,9 @@
             document.head.appendChild(script);
 
             let attempts = 0;
-            const maxAttempts = 300; // 最多等待30秒
+            const maxAttempts = 300;
             const timer = setInterval(() => {
                 attempts++;
-                // 检查 dict 变量是否已更新且有效
                 if (window.dict && window.dict.length > prevLen && window.dict.length > 0) {
                     clearInterval(timer);
                     resolve(window.dict);
@@ -195,19 +209,23 @@
     }
 
     // ========== 真实进度下载 ==========
+        // ========== 真实进度下载（修复大小计算问题）==========
     async function downloadAndInstallDict() {
         showProgress('📥 正在下载字典', '连接服务器...', 0);
 
         try {
-            // 【关键修复】禁止服务器压缩，确保 Content-Length 与实际读取字节数一致
-            const response = await fetch('./js/dict.js', {
+            // 【关键修复】添加 Accept-Encoding: identity 禁止服务器压缩
+            // 这样 Content-Length 就是真实传输大小，与 reader 读取的字节数一致
+            const response = await fetch('./js/kobun_dict.js', {
                 headers: { 'Accept-Encoding': 'identity' }
             });
+
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
             const contentLength = response.headers.get('Content-Length');
             const total = contentLength ? parseInt(contentLength, 10) : 0;
 
+            // 如果无法获取真实大小，回退到普通加载
             if (!response.body || !total) {
                 showProgress('📥 正在下载字典', '大小未知，请稍候...', 50);
                 const rawText = await response.text();
@@ -226,7 +244,7 @@
                 chunks.push(value);
                 received += value.length;
 
-                // 【安全保护】防止服务器忽略 identity 头导致百分比超过 100%
+                // 此时 received 和 total 单位一致（都是未压缩字节）
                 const pct = Math.min(100, Math.round((received / total) * 100));
                 const sizeText = `${formatBytes(received)} / ${formatBytes(total)} (${pct}%)`;
                 showProgress('📥 正在下载字典', sizeText, pct);
@@ -246,11 +264,11 @@
                 }
             }, 1500);
         }
-}
+    }
 
     async function processDictText(rawText) {
         try {
-            showProgress('📦 正在解压字典', '解析数据中...', 90);
+            showProgress('📦 正在解析字典', '请稍候...', 90);
             const dictData = await executeDictScript(rawText);
 
             showProgress('💾 正在保存缓存', '即将完成...', 95);
@@ -265,72 +283,24 @@
         }
     }
 
-    // ========== 逆变形业务逻辑（保持原有算法） ==========
-    function dict_match(d, r) {
-        var type_d = d.type;
-        var type_r = r[1];
-        if (type_d.slice(0,2) == 'vs' && type_r.slice(0,2) == 'vs') return true;
-        if (type_d.slice(0,2) != type_r.slice(0,2)) return false;
-        if (type_d[1] == '2' || type_d[1] == '4') return false;
-        if (type_d.length < 4 && type_r.length < 4 && type_d.slice(0,2) == type_r.slice(0,2)) return true;
-        if (type_d.length > 3 && type_r.length < 4 && type_d.slice(0,2) == type_r.slice(0,2)) {
-            if (type_d == 'v5aru' && r[2].length > 0 && r[2][0].slice(0,1) == 'ま') {
-                if (to_masu(d.kaki,'v5aru') == r[3][0] || to_masu(d.yomi,'v5aru') == r[3][0]) return true;
-                return false;
-            }
-            if (type_d == 'v5k-s' && r[2].length > 0 && (r[2][0].slice(0,1) == 'て' || r[2][0].slice(0,1) == 'た')) {
-                if (to_te(d.kaki,'v5k-s') == r[3][0] || to_te(d.yomi,'v5k-s') == r[3][0] || to_ta(d.kaki,'v5k-s') == r[3][0] || to_ta(d.yomi,'v5k-s') == r[3][0]) return true;
-                return false;
-            }
-            if (type_d == 'v5u-s' && r[2].length > 0 && (r[2][0].slice(0,1) == 'て' || r[2][0].slice(0,1) == 'た')) {
-                if (to_te(d.kaki,'v5u-s') == r[3][0] || to_te(d.yomi,'v5u-s') == r[3][0] || to_ta(d.kaki,'v5k-s') == r[3][0] || to_ta(d.yomi,'v5k-s') == r[3][0]) return true;
-                return false;
-            }
-            if (type_d == 'v5r-i' && r[2].length > 0 && r[2][0].slice(0,1) == 'な') {
-                if (to_nai(d.kaki,'v5r-i') == r[3][0] || to_nai(d.yomi,'v5r-i') == r[3][0]) return true;
-                return false;
-            }
-            if (type_d == 'v1-s' && r[2].length > 0 && r[2][0].slice(0,1) == '命') {
-                if (to_command(d.kaki,'v1-s') == r[3][0] || to_command(d.yomi,'v1-s') == r[3][0]) return true;
-                return false;
-            }
-        }
-        if (type_d.length > 3 && type_r.length > 3 && type_d == type_r) return true;
-        if (type_d.length < 4 && type_r.length > 3) return false;
-        return true;
-    }
-
-    function look_up_dict(result) {
-        var ans = [];
+    // ========== 古典日语业务逻辑 ==========
+    function look_up_dict(kanji) {
+        var ans = [[], [], []];
+        kanji = kata_to_hira(kanji);
         for (var i = 0; i < dict.length; i++) {
-            for (var j = 0; j < result.length; j++) {
-                if (!dict_match(dict[i], result[j])) continue;
-                kanji = result[j][0];
-                if (dict[i].type.slice(0,2) != 'vs' || result[j][0].slice(-2, result[j][0].length) == 'する') {
-                    if (kata_to_hira(dict[i].kaki) == kanji) {
-                        ans.push([result[j][0], dict[i].type, result[j][2], result[j][3]]);
-                        ans[ans.length-1][0] = dict[i].kaki + '(' + dict[i].yomi + ')';
-                    } else if (kata_to_hira(dict[i].yomi) == kanji) {
-                        ans.push([result[j][0], dict[i].type, result[j][2], result[j][3]]);
-                        ans[ans.length-1][0] = dict[i].kaki + '(' + kanji + ')';
-                    }
-                }
-                if (dict[i].type.slice(0,2) == 'vs') {
-                    if (dict[i].kaki != '' && kata_to_hira(dict[i].kaki) + 'する' == kanji) {
-                        ans.push([result[j][0], dict[i].type, result[j][2], result[j][3]]);
-                        ans[ans.length-1][0] = dict[i].kaki + 'する(' + dict[i].yomi + 'する)';
-                    } else if (kata_to_hira(dict[i].yomi) + 'する' == kanji) {
-                        ans.push([result[j][0], dict[i].type, result[j][2], result[j][3]]);
-                        if (dict[i].kaki != '') ans[ans.length-1][0] = dict[i].kaki + 'する(' + dict[i].yomi + 'する)';
-                        else ans[ans.length-1][0] = dict[i].yomi + 'する';
-                    }
-                }
+            if (kata_to_hira(dict[i].kaki) == kanji || kata_to_hira(dict[i].yomi) == kanji) {
+                if (dict[i].kaki == '')
+                    ans[2].push(dict[i].yomi);
+                else
+                    ans[2].push(dict[i].kaki);
+                ans[0].push(dict[i].yomi);
+                ans[1].push(dict[i].type);
             }
         }
         return ans;
     }
 
-    async function work(x) {
+    function work(x) {
         if (!dictReady) {
             document.getElementById('result').textContent = '⏳ 字典加载中，请稍候...';
             return;
@@ -338,14 +308,17 @@
         var verb = document.getElementById('verb').value;
         verb = verb.replace(/\s*/g, '');
         verb = romaji_to_hiragana(verb);
-        verb = kata_to_hira(verb);
-        if (verb == '') { document.getElementById('result').textContent = ''; return; }
-
-        var result = process(verb);
-        result = look_up_dict(result);
-        result = get_result(result);
-
-        if (result == '') result = '对不起，未能计算出"' + verb + '"的逆变形结果！';
+        if (verb == '') {
+            document.getElementById('result').textContent = '';
+            return;
+        }
+        var dict_result = look_up_dict(verb);
+        var result = '';
+        for (var i = 0; i < dict_result[0].length; i++) {
+            var dan = dict_result[1][i];
+            result = result + get_result(dict_result[0][i], dan, dict_result[2][i]) + '\n\n';
+        }
+        if (result == '') result = '找不到"' + verb + '"，变形失败。';
         document.getElementById('result').textContent = result;
         document.getElementById('verb').focus();
         document.getElementById('verb').setSelectionRange(0, document.getElementById('verb').value.length);
