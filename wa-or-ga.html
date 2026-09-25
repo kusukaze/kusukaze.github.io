@@ -224,11 +224,11 @@ const QUESTION_FLOW = [
     },
     {
         id: 'c2_pronoun_colloquial', module: 'C-特例', type: 'special',
-        text: '是否为口语中【指着某物直接感叹】的场景？\n（前面是新信息，句子表达情感/评价）',
-        example: 'この花、美しい！<em>（这花，好美！）</em><br>これ、おいしい！<em>（这个，好吃！）</em>',
+        text: '是否存在以下情况：口语表达，主语为指代眼前事物的代词，且助词选择存在两难（新信息，但重点在后面）？\n',
+        example: 'この花、美しい！<em>（这花，好美！）</em><br>この時計、止まってる。<em>（这个时钟坏了！）</em><br>もしもし、あたし、花子です。<em>（喂，我是花子。）</em>',
         options: [
-            { label: '✓ 是口语感叹', action: 'zero', reason: 'C-2(a)：口语中指着新事物直接感叹时，通常用零助词。' },
-            { label: '× 不是', action: 'next' }
+            { label: '✓ 是口语感叹', action: 'zero', reason: 'C-2(a)：口语会话中，涉及代词的“现场指示”，存在助词选择两难时，通常用零助词。' },
+            { label: '× 不是 / 不确定', action: 'next' }
         ]
     },
     {
@@ -244,7 +244,7 @@ const QUESTION_FLOW = [
     {
         id: 'd1_new_old', module: 'D-软性', type: 'soft',
         text: '主语是【新信息】还是【旧信息】？\n（新信息 = 第一次提到 / 对方不知道的事物）',
-        example: '<em>新信息：</em>昨日、面白い映画を見ました。<br><em>旧信息：</em>その映画は面白かったです。',
+        example: '<em>新信息：</em>突然、猫<em>が</em>走り出した。<br><em>旧信息：</em>この猫<em>は</em>黒い。',
         options: [
             { label: '✓ 主语是新信息', score: { wa: 0, ga: 2, zero: 0 } },
             { label: '✓ 主语是旧信息', score: { wa: 2, ga: 0, zero: 0 } },
