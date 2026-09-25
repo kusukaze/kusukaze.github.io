@@ -483,11 +483,9 @@ function buildDeck(mode) {
   COLOR_ORDER.forEach(function (col) {
     deck.push(makeCard({ kind:"skip",   color:col, base:"sym:skip",   face:"〆", romaji:SYMBOL_MAP["〆"], script:"sym", dan:"", scrTag:"" }));
     deck.push(makeCard({ kind:"draw2",  color:col, base:"sym:draw2",  face:"々", romaji:SYMBOL_MAP["々"], script:"sym", dan:"", scrTag:"" }));
+    deck.push(makeCard({ kind:"reverse", color:col,   base:"sym:reverse", face:REVERSE_FACE, romaji:SYMBOL_MAP[REVERSE_FACE], script:"sym", dan:"", scrTag:"" }));
   });
-  // 3) Reverse：蓝 / 紫各 1 张，牌面均为 ゐヰゑヱ（2*2），跨色可互接；不参与平片拆分匹配
-  deck.push(makeCard({ kind:"reverse", color:"blue",   base:"sym:reverse", face:REVERSE_FACE, romaji:SYMBOL_MAP[REVERSE_FACE], script:"sym", dan:"", scrTag:"" }));
-  deck.push(makeCard({ kind:"reverse", color:"purple", base:"sym:reverse", face:REVERSE_FACE, romaji:SYMBOL_MAP[REVERSE_FACE], script:"sym", dan:"", scrTag:"" }));
-  // 4) 万能牌：んン / +4 んン 各 4 张，黑色底
+ // 3) 万能牌：んン / +4 んン 各 4 张，黑色底
   for (let i = 0; i < 4; i++) {
     deck.push(makeCard({ kind:"wild",  color:"black", base:"sym:wild",  face:"んン",     romaji:SYMBOL_MAP["んン"],     script:"sym", dan:"", scrTag:"" }));
     deck.push(makeCard({ kind:"wild4", color:"black", base:"sym:wild4", face:"+4 んン", romaji:SYMBOL_MAP["+4 んン"], script:"sym", dan:"", scrTag:"" }));
@@ -1297,7 +1295,7 @@ function buildLegend(tableEl, symEl) {
   const syms = [
     ["〆", "shime", "パス / 跳过下家", "赤青緑黄紫 各1枚"],
     ["々", "noma", "+2 接牌挑战 / 下家只能用 +2 或 +4 接，接不上摸全部累加罚牌", "赤青緑黄紫 各1枚"],
-    ["ゐヰゑヱ", "wi we", "リバース / 反转（一张牌・2*2 排列）", "青 1枚・紫 1枚"],
+    ["ゐヰゑヱ", "wi we", "リバース / 反转（一张牌・2*2 排列）", "赤青緑黄紫 各1枚"],
     ["んン", "n", "万能 / 指定颜色", "黒 4枚"],
     ["+4 んン", "+4 n", "+4 接牌挑战 / 此后只能出 +4，接不上摸全部累加罚牌", "黒 4枚"]
   ];
