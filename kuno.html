@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <script>
+!(function(j,a,g){j.__itrace_conf = {bid: 'f43basl8-6nqu7l3w',rel: '0.0.1', spa: true, uid: '', plugins:['jserror','interface','perf','resource','flow','blank']};var b = a.createElement("script");var d = a.getElementsByTagName("script")[0];b.type = "text/javascript";b.crossorigin = true;b.async = true;b.onload = function(){j.__itrace && j.__itrace.setReady()};d.parentNode.insertBefore(b,d);b.src = g})(window, document, "https://g.alicdn.com/woodpeckerx/itrace-next/itrace.iife.js")
+</script>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kuno 假名卡牌</title>
+  <style>
+/* SECTION: reset & tokens */
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+:root{
+  --c-red:#E36C63; --c-red-d:#C74B42; --c-red-l:#F4A79F;
+  --c-blue:#4E92CE; --c-blue-d:#346FA6; --c-blue-l:#9ECBEA;
+  --c-green:#4FA873; --c-green-d:#33805A; --c-green-l:#9BD9B4;
+  --c-yellow:#E2B34B; --c-yellow-d:#B98B22; --c-yellow-l:#F5DCA0;
+  --c-purple:#8B5CF6; --c-purple-d:#6A3AD1; --c-purple-l:#C4AEFB;
+  --c-black:#2E2E38; --c-black-d:#1B1B22; --c-black-l:#5A5A68;
+  --ink:#2A2622; --ink-2:#6B6156; --paper:#FBF7F0; --line:rgba(42,38,34,.12);
+  --shadow:0 10px 26px rgba(51,42,33,.16);
+  --cw:86px; --ch:124px;
+  /* 字体：全站统一中文字体（假名由 CJK 字体字形渲染） */
+  --font-cn:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Source Han Sans SC","Noto Sans SC","WenQuanYi Micro Hei",sans-serif;
+}
+body{
+  font-family:var(--font-cn); color:var(--ink);
+  background:
+    radial-gradient(1100px 520px at 50% -12%, #FFF9EF 0%, rgba(255,249,239,0) 62%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 2px, rgba(0,0,0,0) 2px 5px),
+    linear-gradient(155deg,#F6F0E6 0%,#EFF3EE 46%,#F2EDF7 100%);
+  min-height:100vh; -webkit-tap-highlight-color:transparent;
+}
+button{font-family:inherit;color:inherit}
+/* SECTION: app shell */
+#app{display:flex;flex-direction:column;gap:6px;min-height:100vh;max-width:1280px;margin:0 auto;padding:8px 12px 10px}
+.topbar{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;padding:8px 12px;background:rgba(255,255,255,.72);border:1px solid var(--line);border-radius:16px;box-shadow:0 4px 14px rgba(51,42,33,.07)}
+.brand{font-size:20px;font-weight:800;letter-spacing:.04em;line-height:1}
+.brand small{display:block;font-size:11px;font-weight:600;color:var(--ink-2);letter-spacing:.22em;margin-top:3px}
+.tag{font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;background:#F0E7D8;color:#7A6247;border:1px solid rgba(122,98,71,.18);white-space:nowrap}
+.tag.on{background:#2E2E38;color:#fff;border-color:#2E2E38}
+.spacer{flex:1 1 auto}
+/* SECTION: color indicator */
+.colorbar{display:flex;align-items:center;gap:4px;padding:4px 6px;background:rgba(255,255,255,.6);border-radius:999px;border:1px solid var(--line)}
+.cdot{display:flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:700;color:var(--ink-2);transition:background .25s,color .25s,transform .25s,box-shadow .25s;white-space:nowrap}
+.cdot i{width:11px;height:11px;border-radius:50%;display:block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.cdot.on{transform:scale(1.08);box-shadow:0 0 0 2px rgba(255,255,255,.95),0 4px 12px rgba(51,42,33,.2)}
+.cdot.on .cname{color:#fff}
+.cdot.on{background:var(--dotc,#2E2E38)}
+.dirpill{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+.dirpill .arrow{width:26px;height:26px;border-radius:50%;background:#fff;border:1px solid var(--line);display:grid;place-items:center;font-size:15px;color:#3C3A44;transition:transform .4s cubic-bezier(.2,.9,.2,1)}
+.mini-btn{font-size:12px;font-weight:700;padding:6px 11px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer;transition:transform .15s,box-shadow .15s,background .2s}
+.mini-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(51,42,33,.12)}
+.mini-btn:active{transform:translateY(0)}
+/* SECTION: board + seats */
+.board{flex:1 1 auto;min-height:0;display:grid;gap:8px;grid-template-columns:158px minmax(280px,1fr) 158px;grid-template-rows:auto minmax(0,1fr);grid-template-areas:"left top right" "left center right"}
+#aiRow{display:contents}
+.seat{background:rgba(255,255,255,.62);border:1px solid var(--line);border-radius:16px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:8px;transition:box-shadow .3s,border-color .3s,background .3s}
+.seat-top{grid-area:top;flex-direction:row;justify-content:center;gap:12px;padding:8px 12px}
+.seat-top .fan{height:56px}
+.seat-left{grid-area:left;justify-content:center}
+.seat-right{grid-area:right;justify-content:center}
+.seat.active{border-color:rgba(139,92,246,.55);background:rgba(255,255,255,.92);box-shadow:0 0 0 2px rgba(139,92,246,.25),var(--shadow)}
+.seat-name{font-size:14px;font-weight:800}
+.seat-sub{font-size:11px;color:var(--ink-2);margin-top:-4px}
+.fan{display:flex;justify-content:center;align-items:flex-end;height:62px}
+.fan .card.back{--cw:56px;--ch:80px;margin:0 -18px;box-shadow:0 4px 10px rgba(51,42,33,.18)}
+.fan .card.back:nth-child(1){transform:rotate(-9deg)}
+.fan .card.back:nth-child(2){transform:rotate(-4deg)}
+.fan .card.back:nth-child(3){transform:rotate(0deg)}
+.fan .card.back:nth-child(4){transform:rotate(4deg)}
+.fan .card.back:nth-child(5){transform:rotate(9deg)}
+.count{font-size:11px;font-weight:700;color:var(--ink-2);background:#fff;border:1px solid var(--line);border-radius:999px;padding:3px 9px}
+.kuno-badge{display:none;font-size:11px;font-weight:900;letter-spacing:.08em;color:#fff;background:linear-gradient(135deg,#FF7A5C,#8B5CF6);padding:4px 10px;border-radius:999px;box-shadow:0 4px 12px rgba(139,92,246,.4)}
+.kuno-badge.show{display:block;animation:pop .5s cubic-bezier(.2,1.4,.3,1)}
+/* SECTION: center piles */
+.center{grid-area:center;position:relative;display:flex;align-items:center;justify-content:center;gap:clamp(14px,5vw,48px);min-height:200px}
+.pile{display:flex;flex-direction:column;align-items:center;gap:8px}
+.pile-label{font-size:11px;font-weight:700;color:var(--ink-2);letter-spacing:.1em}
+.pile-box{position:relative;width:var(--cw);height:var(--ch)}
+.stack-shadow{position:absolute;inset:0;border-radius:16px;background:rgba(255,255,255,.5);border:1px solid var(--line)}
+.stack-shadow.s2{transform:translate(5px,5px) rotate(1.6deg)}
+.stack-shadow.s3{transform:translate(10px,10px) rotate(3deg)}
+#drawPile{cursor:pointer;border-radius:16px;transition:transform .18s}
+#drawPile:hover{transform:translateY(-4px) scale(1.02)}
+#drawPile:active{transform:translateY(0)}
+.turn-note{position:absolute;left:50%;transform:translateX(-50%);bottom:-2px;font-size:12px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+.banner{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);opacity:0;pointer-events:none;font-size:clamp(24px,5vw,40px);font-weight:900;letter-spacing:.06em;color:#fff;text-shadow:0 6px 22px rgba(51,42,33,.5);z-index:6;text-align:center;line-height:1.25}
+.banner span{display:block;font-size:.42em;font-weight:700;letter-spacing:.12em;opacity:.92;margin-top:4px}
+.banner.go{animation:bannerPop 1.15s ease-out forwards}
+@keyframes bannerPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}18%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}70%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-62%) scale(.98)}}
+/* SECTION: card */
+.card{position:relative;flex:0 0 auto;width:var(--cw);height:var(--ch);border-radius:16px;color:#fff;user-select:none;overflow:hidden;
+  background:var(--bg,#2E2E38);border:2px solid rgba(255,255,255,.5);
+  box-shadow:0 6px 16px rgba(51,42,33,.2);
+  transition:transform .2s ease,box-shadow .2s ease,filter .2s ease;
+}
+.card::after{content:"";position:absolute;inset:0;background:linear-gradient(150deg,rgba(255,255,255,.22),rgba(255,255,255,0) 46%,rgba(0,0,0,.12));pointer-events:none}
+.card .oval{position:absolute;left:9%;top:13%;width:82%;height:74%;border-radius:50%/40%;background:rgba(255,255,255,.94);box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.card-dan{position:absolute;left:8px;top:7px;font-size:11px;font-weight:800;letter-spacing:.02em;text-shadow:0 1px 3px rgba(0,0,0,.3);z-index:3}
+.card-scr{position:absolute;right:8px;top:7px;font-size:10px;font-weight:800;background:rgba(255,255,255,.28);border-radius:6px;padding:1px 5px;z-index:3}
+.card-face{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-size:34px;font-weight:800;line-height:1.05;z-index:3;color:var(--face,#2E2E38);text-shadow:none;padding:0 4px}
+.card-face.wide{font-size:22px;letter-spacing:-.02em}
+.card-ro{position:absolute;right:8px;bottom:7px;font-size:11px;font-weight:800;font-style:italic;letter-spacing:.02em;text-shadow:0 1px 3px rgba(0,0,0,.35);z-index:3}
+.card-eff{position:absolute;left:8px;bottom:7px;font-size:10px;font-weight:800;opacity:.95;text-shadow:0 1px 3px rgba(0,0,0,.35);z-index:3;letter-spacing:.02em}
+/* 颜色 */
+.col-red{--bg:linear-gradient(150deg,var(--c-red-l),var(--c-red) 42%,var(--c-red-d));--face:var(--c-red-d)}
+.col-blue{--bg:linear-gradient(150deg,var(--c-blue-l),var(--c-blue) 42%,var(--c-blue-d));--face:var(--c-blue-d)}
+.col-green{--bg:linear-gradient(150deg,var(--c-green-l),var(--c-green) 42%,var(--c-green-d));--face:var(--c-green-d)}
+.col-yellow{--bg:linear-gradient(150deg,var(--c-yellow-l),var(--c-yellow) 42%,var(--c-yellow-d));--face:var(--c-yellow-d)}
+.col-purple{--bg:linear-gradient(150deg,var(--c-purple-l),var(--c-purple) 42%,var(--c-purple-d));--face:var(--c-purple-d)}
+.col-black{--bg:linear-gradient(150deg,var(--c-black-l),var(--c-black) 40%,var(--c-black-d))}
+/* 功能牌/万能牌：纯色底 + 白字，无段名 */
+.k-skip,.k-draw2,.k-reverse,.k-wild,.k-wild4{border-color:rgba(255,255,255,.62)}
+.k-skip .card-face,.k-draw2 .card-face,.k-reverse .card-face,.k-wild .card-face,.k-wild4 .card-face{color:#fff;text-shadow:0 3px 12px rgba(0,0,0,.3)}
+.k-reverse .card-face{font-size:24px}
+/* Reverse：一张牌，四个假名以 2*2 网格排列 */
+.card-face.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 2px;padding:0 10px;font-size:18px;line-height:1.14}
+.card-face.grid i{font-style:normal;display:block}
+.k-wild4 .card-face{font-size:19px}
+.k-wild .card-face{font-size:28px}
+.card.back{--bg:linear-gradient(150deg,#4A4550,#2E2E38 45%,#22212A);border-color:rgba(255,255,255,.28)}
+.card.back .oval{left:16%;top:22%;width:68%;height:56%;background:rgba(255,255,255,.9)}
+.card.back .bk{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;font-size:17px;font-weight:900;color:#E36C63;letter-spacing:-.04em}
+/* SECTION: handbar */
+.handbar{display:flex;align-items:flex-end;gap:10px;padding:6px 6px calc(6px + env(safe-area-inset-bottom));background:rgba(255,255,255,.6);border:1px solid var(--line);border-radius:18px}
+.hand-meta{flex:0 0 auto;display:flex;flex-direction:column;gap:6px;align-items:flex-start;padding:0 4px 6px}
+.hand-meta .who{font-size:14px;font-weight:800}
+.hand-meta .hintline{font-size:11px;color:var(--ink-2);max-width:150px}
+.hand{flex:1 1 auto;display:flex;flex-wrap:wrap;gap:7px;justify-content:center;align-items:flex-end;max-height:172px;overflow-y:auto;padding:14px 4px 4px}
+.hand .card{cursor:not-allowed;filter:saturate(.85)}
+.hand .card.playable{cursor:pointer;filter:none;transform:translateY(-14px);box-shadow:0 0 0 3px rgba(255,255,255,.95),0 0 20px 4px rgba(139,92,246,.45),0 12px 22px rgba(51,42,33,.24);animation:breathe 2.4s ease-in-out infinite}
+.hand .card.playable:hover{transform:translateY(-24px) scale(1.05);animation:none;box-shadow:0 0 0 3px #fff,0 0 26px 8px rgba(139,92,246,.55),0 16px 28px rgba(51,42,33,.28)}
+.hand .card.played{animation:flyout .34s ease-in forwards}
+.hand .card.just{animation:dealIn .3s ease-out}
+.card.drop-in{animation:dropIn .34s cubic-bezier(.2,1.3,.3,1)}
+@keyframes dropIn{from{opacity:0;transform:translateY(-18px) scale(.86) rotate(-5deg)}to{opacity:1;transform:none}}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 3px rgba(255,255,255,.95),0 0 14px 2px rgba(139,92,246,.35),0 12px 22px rgba(51,42,33,.24)}50%{box-shadow:0 0 0 3px rgba(255,255,255,.95),0 0 26px 8px rgba(139,92,246,.55),0 12px 22px rgba(51,42,33,.24)}}
+@keyframes flyout{to{opacity:0;transform:translateY(-90px) scale(.8)}}
+@keyframes dealIn{from{opacity:0;transform:translateY(26px) scale(.9)}to{opacity:1}}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.shake{animation:shake .42s cubic-bezier(.36,.07,.19,.97)!important}
+@keyframes shake{10%,90%{transform:translateX(-3px)}20%,80%{transform:translateX(5px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}
+.side-actions{flex:0 0 auto;display:flex;flex-direction:column;gap:8px;padding-bottom:6px}
+.act-btn{min-width:104px;min-height:46px;font-size:14px;font-weight:800;border-radius:14px;border:none;cursor:pointer;padding:0 16px;color:#fff;background:linear-gradient(150deg,#8B5CF6,#6A3AD1);box-shadow:0 6px 16px rgba(106,58,209,.36);transition:transform .16s,box-shadow .16s,opacity .2s}
+.act-btn.alt{background:linear-gradient(150deg,#5A5A68,#2E2E38);box-shadow:0 6px 16px rgba(46,46,56,.3)}
+.act-btn:disabled{opacity:.42;cursor:not-allowed;box-shadow:none}
+.act-btn:not(:disabled):hover{transform:translateY(-2px)}
+/* SECTION: log */
+.log{display:flex;gap:8px;overflow:hidden;padding:2px 6px;height:34px;align-items:center}
+.log-line{font-size:12px;color:var(--ink-2);background:rgba(255,255,255,.5);border:1px solid var(--line);border-radius:999px;padding:4px 11px;white-space:nowrap;font-weight:600;opacity:.55}
+.log-line:first-child{color:var(--ink);font-weight:700;background:#fff;opacity:1}
+/* 只有最新一条淡入，旧记录静止不动 */
+.log-line.in{animation:logIn .26s ease-out}
+@keyframes logIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+/* SECTION: overlays */
+.overlay{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(38,32,26,.5);backdrop-filter:blur(5px)}
+.overlay[hidden]{display:none}
+.panel{width:min(760px,100%);max-height:92vh;overflow:auto;background:var(--paper);border-radius:24px;box-shadow:0 24px 60px rgba(0,0,0,.35);padding:clamp(18px,3.4vw,32px);border:1px solid rgba(255,255,255,.7)}
+.panel h1{margin:0;font-size:clamp(28px,5vw,42px);letter-spacing:.02em;line-height:1.1}
+.panel h1 .kana{color:var(--c-purple-d)}
+.panel h2{margin:18px 0 8px;font-size:15px;letter-spacing:.08em;color:var(--ink-2)}
+.sub{margin:8px 0 0;font-size:14px;color:var(--ink-2);line-height:1.7}
+.mode-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:10px}
+.mode-opt{text-align:left;padding:14px;border-radius:16px;border:2px solid var(--line);background:#fff;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s}
+.mode-opt input{position:absolute;opacity:0;pointer-events:none}
+.mode-opt .t{font-size:15px;font-weight:800}
+.mode-opt .d{font-size:12px;color:var(--ink-2);margin-top:4px;line-height:1.55}
+.mode-opt.sel{border-color:var(--c-purple);box-shadow:0 8px 22px rgba(139,92,246,.24);transform:translateY(-2px)}
+.legend{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+.legend th,.legend td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.legend th{font-size:11px;color:var(--ink-2);letter-spacing:.06em;font-weight:700;white-space:nowrap}
+.legend td.kana-cell{font-size:15px;font-weight:800;letter-spacing:.04em}
+.sw{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:6px;vertical-align:-1px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.sym-chip{display:inline-flex;align-items:center;gap:5px;margin:0 6px 6px 0;padding:4px 9px;border-radius:10px;background:#fff;border:1px solid var(--line);font-size:13px;font-weight:800}
+.sym-chip b{font-size:16px}
+.sym-chip .r{font-style:italic;font-size:11px;font-weight:800;color:var(--ink-2)}
+.rules{font-size:13px;line-height:1.85;color:var(--ink);padding-left:20px;margin:6px 0 0}
+.panel-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.big-btn{flex:1 1 auto;min-height:52px;font-size:17px;font-weight:900;letter-spacing:.06em;border-radius:16px;border:none;cursor:pointer;padding:0 22px;color:#fff;background:linear-gradient(140deg,#E36C63,#8B5CF6);box-shadow:0 10px 26px rgba(139,92,246,.4);transition:transform .16s}
+.big-btn:active{transform:scale(.98)}
+.ghost-btn{min-height:52px;font-size:14px;font-weight:800;border-radius:16px;border:2px solid var(--line);background:#fff;cursor:pointer;padding:0 18px;color:var(--ink-2)}
+/* color picker */
+.pick-panel{width:min(460px,100%);text-align:center}
+.pick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:14px}
+.pick-btn{min-height:64px;border-radius:16px;border:2px solid rgba(255,255,255,.7);cursor:pointer;color:#fff;font-weight:900;font-size:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:0 8px 20px rgba(51,42,33,.25);transition:transform .16s,box-shadow .16s}
+.pick-btn small{font-size:11px;font-weight:700;opacity:.9}
+.pick-btn:hover{transform:translateY(-3px) scale(1.03)}
+/* result */
+.res-score{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.res-score div{flex:1 1 110px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px}
+.res-score b{display:block;font-size:22px}
+.res-score span{font-size:11px;color:var(--ink-2)}
+.kana-echo{margin-top:8px;font-size:19px;letter-spacing:.08em;line-height:1.7;color:var(--c-purple-d);font-weight:800;word-break:break-all}
+/* toast */
+#toast{position:fixed;left:50%;bottom:calc(190px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(14px);z-index:60;max-width:min(92vw,520px);padding:11px 18px;border-radius:14px;background:rgba(38,32,26,.94);color:#fff;font-size:13px;font-weight:700;line-height:1.5;box-shadow:0 12px 30px rgba(0,0,0,.34);opacity:0;pointer-events:none;transition:opacity .22s,transform .22s;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* SECTION: responsive */
+@media (max-width:900px){
+  :root{--cw:74px;--ch:106px}
+  #app{padding:6px 8px calc(8px + env(safe-area-inset-bottom))}
+  .board{grid-template-columns:1fr;grid-template-rows:auto 1fr;grid-template-areas:"ai" "center"}
+  #aiRow{display:flex;grid-area:ai;gap:6px}
+  .seat{flex:1 1 0;padding:8px 6px;gap:5px;border-radius:14px}
+  .seat-top{flex-direction:column;padding:8px 6px;gap:5px}
+  .seat .fan{display:none}
+  .seat-name{font-size:12px}
+  .seat-sub{font-size:10px}
+  .center{min-height:160px;gap:16px}
+  .handbar{flex-direction:column;align-items:stretch}
+  .hand-meta{flex-direction:row;align-items:center;gap:8px;padding:0 2px}
+  .hand-meta .hintline{max-width:none}
+  .hand{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;max-height:none;justify-content:flex-start;padding:12px 2px 6px;-webkit-overflow-scrolling:touch}
+  .hand .card.playable{transform:translateY(-9px)}
+  .side-actions{flex-direction:row}
+  .act-btn{flex:1 1 auto;min-width:0}
+  .colorbar{flex-wrap:wrap;justify-content:center}
+  .log{height:30px}
+}
+@media (max-width:430px){
+  :root{--cw:64px;--ch:94px}
+  .brand{font-size:17px}
+  .cdot{font-size:10px;padding:2px 6px}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- SECTION: topbar -->
+  <header class="topbar">
+    <div class="brand">KUNO<small>クノ ・ 仮名 UNO</small></div>
+    <div class="tag" id="tagMode">モード</div>
+    <div class="spacer"></div>
+    <div class="colorbar" id="colorbar" aria-label="現在の颜色 / 段"></div>
+    <div class="dirpill"><span class="arrow" id="dirArrow">↻</span><span id="dirText">顺时针</span></div>
+    <div class="tag" id="tagDeck">山牌 0</div>
+    <button class="mini-btn" id="btnRule" type="button">规则</button>
+    <button class="mini-btn" id="btnSound" type="button">音效 关</button>
+  </header>
+
+  <!-- SECTION: board -->
+  <main class="board">
+    <div id="aiRow">
+      <section class="seat seat-left" id="seat1"></section>
+      <section class="seat seat-top" id="seat2"></section>
+      <section class="seat seat-right" id="seat3"></section>
+    </div>
+    <section class="center" id="center">
+      <div class="pile">
+        <div class="pile-box" id="drawPile" role="button" tabindex="0" aria-label="摸牌" data-primary-action="draw"></div>
+        <div class="pile-label">山札 / 摸牌</div>
+      </div>
+      <div class="pile">
+        <div class="pile-box" id="discardBox"></div>
+        <div class="pile-label">捨て札 / 弃牌</div>
+      </div>
+      <div class="banner" id="banner"></div>
+      <div class="turn-note" id="turnNote"></div>
+    </section>
+  </main>
+
+  <!-- SECTION: log -->
+  <div class="log" id="log"></div>
+
+  <!-- SECTION: handbar -->
+  <footer class="handbar">
+    <div class="hand-meta">
+      <div class="who">あなた / 你</div>
+      <div class="hintline" id="handHint">同色（同段）・同字符・同行（同子音列）・万能牌，满足其一即可出牌</div>
+    </div>
+    <div class="hand" id="hand"></div>
+    <div class="side-actions">
+      <button class="act-btn alt" id="btnDraw" type="button" data-primary-action="draw">山札を引く<br><span style="font-size:11px;font-weight:700">摸一张</span></button>
+      <button class="act-btn" id="btnEnd" type="button">ターン終了<br><span style="font-size:11px;font-weight:700">结束回合</span></button>
+    </div>
+  </footer>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- SECTION: start overlay -->
+<div class="overlay" id="startOverlay">
+  <div class="panel">
+    <h1>KUNO <span class="kana">クノ</span></h1>
+    <p class="sub">五十音图的「段」＝颜色。<br>赤=あ段・青=い段・緑=う段・黄=え段・紫=お段，五段五色，不合并。<br>出牌匹配假名与颜色，边玩边记牢。</p>
+    <h2>モード选择 / 游戏模式</h2>
+    <div class="mode-list" id="modeList"></div>
+    <h2>段 × 色 対応表 / 段与颜色对照</h2>
+    <table class="legend" id="legendTable"></table>
+    <h2>行（同子音列）/ 同一行的牌可跨色接续</h2>
+    <div id="legendRow"></div>
+    <h2>特殊牌 / 记号牌</h2>
+    <div id="legendSym"></div>
+    <h2>ルール / 规则</h2>
+    <ul class="rules">
+      <li>出牌满足其一：<b>同色（＝同段）</b>、<b>同字符（同符号类型）</b>、<b>同行（同子音列，如 ま 可接む・め・も・み）</b>、<b>万能牌</b>。</li>
+      <li>混合模式下「あ＝ア」视为同一字符，可跨色互接；出牌后颜色随新牌。</li>
+      <li>〆(sime) 跳过下家・々(noma) 下家摸2并跳过・ゐヰゑヱ(wi we) 一张牌反转顺序（蓝紫可互接）・んン(n) 变色×4・+4 んン(+4 n) 下家摸4并跳过×4。</li>
+      <li><b>JUMP</b>：你打出普通假名牌时，手里同音的另一张普通牌（如 と 与 ト）会自动一并打出。</li>
+      <li>手牌只剩 1 张时自动高喊 <b>KUNO！</b></li>
+      <li>先出完手牌者胜利；山牌摸完自动把弃牌堆洗回。</li>
+    </ul>
+    <div class="panel-actions">
+      <button class="big-btn" id="btnStart" type="button" data-primary-action="start">ゲームスタート / 开始游戏</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION: color picker overlay -->
+<div class="overlay" id="pickOverlay" hidden>
+  <div class="panel pick-panel">
+    <h2 style="margin-top:0">色を指定してください / 请选择下一种颜色</h2>
+    <div class="pick-grid" id="pickGrid"></div>
+  </div>
+</div>
+
+<!-- SECTION: result overlay -->
+<div class="overlay" id="resultOverlay" hidden>
+  <div class="panel">
+    <h1 id="resTitle">結果</h1>
+    <p class="sub" id="resJp"></p>
+    <p class="sub" id="resZh"></p>
+    <div class="res-score" id="resScore"></div>
+    <h2>あなたの打った仮名 / 你打出的假名</h2>
+    <div class="kana-echo" id="resKana"></div>
+    <div class="panel-actions">
+      <button class="big-btn" id="btnAgain" type="button">もう一局 / 再来一局</button>
+      <button class="ghost-btn" id="btnBackMode" type="button">换模式</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION: rule overlay -->
+<div class="overlay" id="ruleOverlay" hidden>
+  <div class="panel">
+    <h2 style="margin-top:0">段 × 色 対応表</h2>
+    <table class="legend" id="legendTable2"></table>
+    <h2>行（同子音列）</h2>
+    <div id="legendRow2"></div>
+    <h2>特殊牌</h2>
+    <div id="legendSym2"></div>
+    <div class="panel-actions"><button class="ghost-btn" id="btnCloseRule" type="button">閉じる / 关闭</button></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* SECTION: data */
+// 5 色严格对应 5 段，不合并任何段；紫色按需求指定为 #8B5CF6
+const COLORS = {
+  red:    { ja:"赤", zh:"红", hira:"あ段", kata:"ア段", css:"#E36C63", cssDark:"#C74B42" },
+  blue:   { ja:"青", zh:"蓝", hira:"い段", kata:"イ段", css:"#4E92CE", cssDark:"#346FA6" },
+  green:  { ja:"緑", zh:"绿", hira:"う段", kata:"ウ段", css:"#4FA873", cssDark:"#33805A" },
+  yellow: { ja:"黄", zh:"黄", hira:"え段", kata:"エ段", css:"#E2B34B", cssDark:"#B98B22" },
+  purple: { ja:"紫", zh:"紫", hira:"お段", kata:"オ段", css:"#8B5CF6", cssDark:"#6A3AD1" },
+  black:  { ja:"黒", zh:"黑", hira:"万能", kata:"万能", css:"#2E2E38", cssDark:"#1B1B22" }
+};
+const COLOR_ORDER = ["red","blue","green","yellow","purple"];
+
+// 五十音按段拆分；每项 = [平假名, 片假名, 罗马音]，罗马音在同字符匹配时用作 base id
+const SEGMENTS = [
+  { key:"a", color:"red", rows:[
+    ["あ","ア","a"],["か","カ","ka"],["さ","サ","sa"],["た","タ","ta"],["な","ナ","na"],
+    ["は","ハ","ha"],["ま","マ","ma"],["や","ヤ","ya"],["ら","ラ","ra"],["わ","ワ","wa"] ] },
+  { key:"i", color:"blue", rows:[
+    ["い","イ","i"],["き","キ","ki"],["し","シ","shi"],["ち","チ","chi"],["に","ニ","ni"],
+    ["ひ","ヒ","hi"],["み","ミ","mi"],["り","リ","ri"] ] },
+  { key:"u", color:"green", rows:[
+    ["う","ウ","u"],["く","ク","ku"],["す","ス","su"],["つ","ツ","tsu"],["ぬ","ヌ","nu"],
+    ["ふ","フ","fu"],["む","ム","mu"],["ゆ","ユ","yu"],["る","ル","ru"] ] },
+  { key:"e", color:"yellow", rows:[
+    ["え","エ","e"],["け","ケ","ke"],["せ","セ","se"],["て","テ","te"],["ね","ネ","ne"],
+    ["へ","ヘ","he"],["め","メ","me"],["れ","レ","re"] ] },
+  { key:"o", color:"purple", rows:[
+    ["お","オ","o"],["こ","コ","ko"],["そ","ソ","so"],["と","ト","to"],["の","ノ","no"],
+    ["ほ","ホ","ho"],["も","モ","mo"],["よ","ヨ","yo"],["ろ","ロ","ro"],["を","ヲ","wo"] ] }
+];
+
+/* 五十音的"行"＝同子音列（縦轴），与"段"（横轴/颜色）正交。
+   同一行的假名可以跨色接续：例如 ま行 = ま・み・む・め・も，横跨红青绿黄紫五色。*/
+const ROW_MAP = {
+  a: "あ行", i: "あ行", u: "あ行", e: "あ行", o: "あ行",
+  ka: "か行", ki: "か行", ku: "か行", ke: "か行", ko: "か行",
+  sa: "さ行", shi: "さ行", su: "さ行", se: "さ行", so: "さ行",
+  ta: "た行", chi: "た行", tsu: "た行", te: "た行", to: "た行",
+  na: "な行", ni: "な行", nu: "な行", ne: "な行", no: "な行",
+  ha: "は行", hi: "は行", fu: "は行", he: "は行", ho: "は行",
+  ma: "ま行", mi: "ま行", mu: "ま行", me: "ま行", mo: "ま行",
+  ya: "や行", yu: "や行", yo: "や行",
+  ra: "ら行", ri: "ら行", ru: "ら行", re: "ら行", ro: "ら行",
+  wa: "わ行", wo: "わ行"
+};
+const ROW_ORDER = ["あ行", "か行", "さ行", "た行", "な行", "は行", "ま行", "や行", "ら行", "わ行"];
+
+// 完整符号-罗马音映射表（含 Kuno 专属符号）
+const SYMBOL_MAP = {
+  "〆":"sime", "々":"noma", "ゐヰゑヱ":"wi we", "んン":"n", "+4 んン":"+4 n"
+};
+// Reverse 为一张牌：ゐ ヰ / ゑ ヱ 四假名 2*2 组合体，罗马音 wi we
+const REVERSE_FACE = "ゐヰゑヱ";
+const REVERSE_GLYPHS = ["ゐ", "ヰ", "ゑ", "ヱ"];
+const EFFECT_LABEL = { skip:"パス", draw2:"+2", reverse:"リバース", wild:"色変更", wild4:"+4 色" };
+
+const MODES = {
+  hira:  { name:"平仮名モード", zh:"平假名模式", desc:"全部普通牌为平假名，专注平假名读音。" },
+  kata:  { name:"片仮名モード", zh:"片假名模式", desc:"全部普通牌为片假名，练片假名认读。" },
+  mixed: { name:"混合モード", zh:"混合模式", desc:"平假名与片假名同时在库，「あ＝ア」可跨色互接。" }
+};
+
+const AI_NAMES = [
+  { name:"美咲", jp:"みさき" },
+  { name:"健太", jp:"けんた" },
+  { name:"凛",   jp:"りん" }
+];
+/* SECTION: engine */
+// ---------- 全局状态 ----------
+const state = {
+  mode: "mixed",
+  players: [],           // 0=人类，1/2/3=AI（下→左→上→右 为顺时针）
+  deck: [],
+  discard: [],
+  activeColor: "red",    // 当前有效颜色（万能牌指定后更新）
+  dir: 1,                // 1=顺时针，-1=逆时针
+  turn: 0,
+  phase: "start",        // start | play | over
+  busy: false,           // 锁定人类输入（AI 行动中 / 结算中）
+  drawnThisTurn: false,  // 本回合已摸牌（摸到可出的牌时允许继续出牌）
+  lastDrawn: "",         // 刚摸到的牌 uid，用于入手动画
+  round: 0,
+  myKana: [],            // 人类打出的假名，用于结算复盘
+  logSeq: 0,             // 日志自增 id，供增量渲染复用节点
+  logs: []
+};
+let uidSeq = 0;
+const $ = function (id) { return document.getElementById(id); };
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+  }
+  return arr;
+}
+
+// ---------- 牌库生成（严格区分四类来源） ----------
+function makeCard(o) {
+  o.uid = "k" + (uidSeq++);
+  return o;
+}
+// 段名：平假名牌用「あ段」，片假名牌用「ア段」
+function segDan(color, script) {
+  return script === "kata" ? COLORS[color].kata : COLORS[color].hira;
+}
+function buildDeck(mode) {
+  const deck = [];
+  // 1) 普通假名牌：按 段 × 颜色 生成，每张携带罗马音属性
+  SEGMENTS.forEach(function (seg) {
+    seg.rows.forEach(function (row) {
+      const forms = mode === "mixed"
+        ? [["hira", row[0]], ["kata", row[1]]]
+        : (mode === "kata" ? [["kata", row[1]]] : [["hira", row[0]]]);
+      forms.forEach(function (f) {
+        deck.push(makeCard({
+          kind: "normal", color: seg.color, seg: seg.key,
+          base: row[2],                 // 罗马音即"同字符"匹配键（あ/ア 共用）
+          face: f[1], script: f[0],
+          romaji: row[2],
+          dan: segDan(seg.color, f[0]),
+          row: ROW_MAP[row[2]] || "",       // 同子音行，用于"同行跨色"接续判定
+          scrTag: mode === "mixed" ? (f[0] === "kata" ? "片" : "平") : ""
+        }));
+      });
+    });
+  });
+  // 2) 〆 / 々：每种颜色各 1 张 → 5 色 × 2 种 = 10 张，无段名
+  COLOR_ORDER.forEach(function (col) {
+    deck.push(makeCard({ kind:"skip",   color:col, base:"sym:skip",   face:"〆", romaji:SYMBOL_MAP["〆"], script:"sym", dan:"", scrTag:"" }));
+    deck.push(makeCard({ kind:"draw2",  color:col, base:"sym:draw2",  face:"々", romaji:SYMBOL_MAP["々"], script:"sym", dan:"", scrTag:"" }));
+  });
+  // 3) Reverse：蓝 / 紫各 1 张，牌面均为 ゐヰゑヱ（2*2），跨色可互接；不参与平片拆分匹配
+  deck.push(makeCard({ kind:"reverse", color:"blue",   base:"sym:reverse", face:REVERSE_FACE, romaji:SYMBOL_MAP[REVERSE_FACE], script:"sym", dan:"", scrTag:"" }));
+  deck.push(makeCard({ kind:"reverse", color:"purple", base:"sym:reverse", face:REVERSE_FACE, romaji:SYMBOL_MAP[REVERSE_FACE], script:"sym", dan:"", scrTag:"" }));
+  // 4) 万能牌：んン / +4 んン 各 4 张，黑色底
+  for (let i = 0; i < 4; i++) {
+    deck.push(makeCard({ kind:"wild",  color:"black", base:"sym:wild",  face:"んン",     romaji:SYMBOL_MAP["んン"],     script:"sym", dan:"", scrTag:"" }));
+    deck.push(makeCard({ kind:"wild4", color:"black", base:"sym:wild4", face:"+4 んン", romaji:SYMBOL_MAP["+4 んン"], script:"sym", dan:"", scrTag:"" }));
+  }
+  return shuffle(deck);
+}
+
+// ---------- 匹配判定：同色 || 同字符/同符号类型 || 万能牌 ----------
+function matchKey(card) {
+  return card.kind === "normal" ? "b:" + card.base : "k:" + card.base;
+}
+function isWild(card) { return card.kind === "wild" || card.kind === "wild4"; }
+function topCard() { return state.discard.length ? state.discard[state.discard.length - 1] : null; }
+
+// 同行判定：只有普通假名牌带 row，功能牌 / 万能牌不参与（row 为空即不成立）
+function sameRow(a, b) {
+  return !!(a && b && a.row && b.row && a.row === b.row);
+}
+function canPlay(card, color) {
+  if (isWild(card)) return true;                                   // 万能牌：接在任意牌后
+  const useColor = color || state.activeColor;
+  if (card.color === useColor) return true;                        // 同色（= 同段）
+  const top = topCard();
+  if (!top) return true;
+  if (matchKey(card) === matchKey(top)) return true;               // 同字符 / 同符号类型（含 〆↔〆、々↔々、ゐヰゑヱ↔ゐヰゑヱ、混合模式 あ↔ア）
+  if (sameRow(card, top)) return true;                             // 同行（同子音列）：ま → み・む・め・も，出牌后颜色随新牌
+  return false;
+}
+function rejectReason(card) {
+  if (state.phase !== "play") return "游戏还没开始。";
+  if (state.turn !== 0 || state.busy) return "现在是 " + nameOf(state.turn) + " 的回合，稍等一下。";
+  const col = COLORS[state.activeColor];
+  const top = topCard();
+  const topRow = top && top.row ? "（" + top.row + "）" : "";
+  return "既不同色、也不同字符/符号、也不同行 —— 当前颜色是 " + col.zh + "（" + col.hira + "），顶牌是「"
+    + (top ? top.face : "-") + "」" + topRow + "；只有同段或同行的假名才能跨色接续。";
+}
+function playableHand(pid) {
+  const p = state.players[pid];
+  return p.hand.filter(function (c) { return canPlay(c); });
+}
+
+// ---------- 牌堆管理 ----------
+function drawOne(pid) {
+  if (!state.deck.length) reshapeDeck();
+  if (!state.deck.length) return null;
+  const c = state.deck.pop();
+  state.players[pid].hand.push(c);
+  return c;
+}
+function drawN(pid, n) {
+  let got = 0;
+  for (let i = 0; i < n; i++) { if (drawOne(pid)) got++; }
+  return got;
+}
+// 山牌摸空 → 弃牌堆（留顶牌）洗回
+function reshapeDeck() {
+  if (state.discard.length <= 1) return;
+  const keep = state.discard.pop();
+  state.deck = shuffle(state.discard);
+  state.discard = [keep];
+  log("山牌为空，弃牌堆洗回。", true);
+}
+function deal(n) {
+  state.players.forEach(function (p) { drawN(p.id, n); });
+}
+
+// ---------- DOM 构建（零插值：动态值一律属性赋值注入） ----------
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined && text !== null) n.textContent = text;
+  return n;
+}
+function buildCardEl(card) {
+  const node = el("div", "card");
+  node.classList.add("k-" + card.kind, "col-" + card.color);
+  node.dataset.uid = card.uid;
+  if (card.kind === "normal") {
+    const oval = el("div", "oval");
+    node.appendChild(oval);
+    node.appendChild(el("span", "card-dan", card.dan));
+    node.appendChild(el("span", "card-face", card.face));
+    node.appendChild(el("span", "card-ro", card.romaji));
+    if (card.scrTag) node.appendChild(el("span", "card-scr", card.scrTag));
+  } else if (card.kind === "reverse") {
+    // 一张牌上 2*2 排开：ゐ ヰ / ゑ ヱ
+    const grid = el("span", "card-face grid");
+    REVERSE_GLYPHS.forEach(function (g) { grid.appendChild(el("i", null, g)); });
+    node.appendChild(grid);
+    node.appendChild(el("span", "card-eff", EFFECT_LABEL.reverse));
+    node.appendChild(el("span", "card-ro", card.romaji));
+  } else {
+    const face = el("span", "card-face", card.face);
+    if (card.kind === "wild4" || card.kind === "wild") face.classList.add("wide");
+    node.appendChild(face);
+    node.appendChild(el("span", "card-eff", EFFECT_LABEL[card.kind]));
+    node.appendChild(el("span", "card-ro", card.romaji));
+  }
+  node.setAttribute("aria-label", cardLabel(card));
+  return node;
+}
+function buildBackEl() {
+  const node = el("div", "card back col-black");
+  node.appendChild(el("div", "oval"));
+  node.appendChild(el("span", "bk", "クノ"));
+  return node;
+}
+function cardLabel(card) {
+  const col = COLORS[card.color];
+  return (card.dan ? card.dan + " " : "") + card.face + " " + card.romaji + " " + col.zh
+    + (card.row ? " · " + card.row : "");
+}
+function faceOf(card) { return card.face; }
+function nameOf(pid) { return pid === 0 ? "你" : AI_NAMES[pid - 1].name; }
+function isHuman(pid) { return pid === 0; }
+/* SECTION: render */
+/* 视图签名缓存：renderAll 一轮里会被调用很多次（AI 行动、结算、轮次推进…），
+   以前每次都重建 DOM，导致 drop-in / rotate 牌背 / breathe 发光动画被反复重播
+   —— 这就是"中间的牌一直在晃"的根因。现在只在该区域真的变化时才重建。 */
+const view = { discardUid: null, drawKey: null, seats: {}, handSig: null, logIds: null };
+function resetView() {
+  view.discardUid = null; view.drawKey = null; view.seats = {}; view.handSig = null; view.logIds = null;
+}
+// 五色指示器只建一次，之后仅切换 active 类
+function buildColorbar() {
+  const bar = $("colorbar");
+  bar.textContent = "";
+  COLOR_ORDER.forEach(function (col) {
+    const dot = el("div", "cdot");
+    dot.style.setProperty("--dotc", COLORS[col].css);
+    dot.dataset.color = col;
+    const ball = el("i");
+    ball.style.background = COLORS[col].css;
+    ball.style.boxShadow = "inset 0 0 0 1px rgba(0,0,0,.12)";
+    dot.appendChild(ball);
+    dot.appendChild(el("span", "cname", COLORS[col].hira));
+    dot.title = COLORS[col].zh + " · " + COLORS[col].hira;
+    bar.appendChild(dot);
+  });
+}
+function renderTop() {
+  $("tagMode").textContent = MODES[state.mode].zh;
+  $("tagDeck").textContent = "山牌 " + state.deck.length;
+  const dots = $("colorbar").querySelectorAll(".cdot");
+  for (let i = 0; i < dots.length; i++) {
+    const dot = dots[i];
+    const on = dot.dataset.color === state.activeColor;
+    dot.classList.toggle("on", on);
+    const ball = dot.querySelector("i");
+    if (ball) ball.style.boxShadow = on
+      ? "inset 0 0 0 1px rgba(0,0,0,.12),0 0 0 2px #fff"
+      : "inset 0 0 0 1px rgba(0,0,0,.12)";
+  }
+  $("dirText").textContent = state.dir === 1 ? "顺时针" : "逆时针";
+  $("dirArrow").textContent = state.dir === 1 ? "↻" : "↺";
+}
+function renderSeats() {
+  for (let pid = 1; pid <= 3; pid++) {
+    const seat = $("seat" + pid);
+    if (!seat) continue;
+    const p = state.players[pid];
+    if (!p) continue;
+    const active = state.turn === pid && state.phase === "play";
+    const sig = p.name + "|" + p.hand.length + "|" + (active ? "A" : "-") + "|" + state.phase;
+    if (view.seats[pid] === sig) continue;      // 张数与状态没变 → 不重建牌背扇形
+    view.seats[pid] = sig;
+    seat.textContent = "";
+    seat.appendChild(el("div", "seat-name", p.name));
+    seat.appendChild(el("div", "seat-sub", p.jp + " · AI"));
+    const fan = el("div", "fan");
+    const show = Math.min(5, p.hand.length);
+    for (let i = 0; i < show; i++) fan.appendChild(buildBackEl());
+    seat.appendChild(fan);
+    seat.appendChild(el("div", "count", "手牌 " + p.hand.length + " 枚"));
+    const badge = el("div", "kuno-badge", "KUNO!");
+    if (p.hand.length === 1 && state.phase === "play") badge.classList.add("show");
+    seat.appendChild(badge);
+    seat.classList.toggle("active", active);
+  }
+}
+function renderCenter() {
+  // 山牌堆：只在"阶段 / 有无牌"变化时重建
+  const drawKey = state.phase + "|" + (state.deck.length > 0 ? "d" : "0");
+  if (drawKey !== view.drawKey) {
+    view.drawKey = drawKey;
+    const dp = $("drawPile");
+    dp.textContent = "";
+    if (state.phase === "play") {
+      dp.appendChild(el("div", "stack-shadow s3"));
+      dp.appendChild(el("div", "stack-shadow s2"));
+      dp.appendChild(buildBackEl());
+    }
+  }
+  // 弃牌堆：只有顶牌真的换了才重建并播一次入场动画
+  const top = topCard();
+  const uid = top ? top.uid : "";
+  if (uid !== view.discardUid) {
+    view.discardUid = uid;
+    const db = $("discardBox");
+    db.textContent = "";
+    if (top) {
+      db.appendChild(el("div", "stack-shadow s2"));
+      const node = buildCardEl(top);
+      node.classList.add("drop-in");
+      // 黑色万能牌顶上时，用当前颜色描边提示
+      if (top.color === "black") node.style.boxShadow = "0 0 0 4px " + COLORS[state.activeColor].css + ",0 8px 20px rgba(51,42,33,.26)";
+      db.appendChild(node);
+    }
+  }
+  const note = $("turnNote");
+  let noteTxt = "";
+  if (state.phase === "play") noteTxt = state.turn === 0 ? "あなたの番 / 你的回合" : nameOf(state.turn) + " 思考中…";
+  else if (state.phase === "over") noteTxt = "終了 / 本局结束";
+  if (note.textContent !== noteTxt) note.textContent = noteTxt;
+}
+function renderHand() {
+  const hand = $("hand");
+  const p = state.players[0];
+  const mine = state.phase === "play" && state.turn === 0 && !state.busy;
+  $("btnDraw").disabled = !mine || state.drawnThisTurn;
+  $("btnEnd").disabled = !mine || !state.drawnThisTurn;
+  if (!p) { hand.textContent = ""; view.handSig = "none"; return; }
+  const okSet = {};
+  if (mine) playableHand(0).forEach(function (c) { okSet[c.uid] = true; });
+  // 手牌构成 + 可出标记 + 回合归属 全部一致时不重建，避免发光呼吸动画被重置
+  const sig = p.hand.map(function (c) { return c.uid + (okSet[c.uid] ? "*" : ""); }).join(",")
+    + "|" + (mine ? "M" : "-") + "|" + state.lastDrawn + "|" + state.phase;
+  if (sig === view.handSig) return;
+  view.handSig = sig;
+  hand.textContent = "";
+  p.hand.forEach(function (card) {
+    const node = buildCardEl(card);
+    node.tabIndex = 0;
+    node.setAttribute("role", "button");
+    if (okSet[card.uid]) node.classList.add("playable");
+    if (card.uid === state.lastDrawn) node.classList.add("just");
+    node.addEventListener("click", function () { humanPlay(card); });
+    node.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); humanPlay(card); }
+    });
+    hand.appendChild(node);
+  });
+  let badge = $("kunoMe");
+  if (!badge) {
+    badge = el("div", "kuno-badge", "KUNO!");
+    badge.id = "kunoMe";
+    document.querySelector(".hand-meta").appendChild(badge);
+  }
+  badge.classList.toggle("show", p.hand.length === 1 && state.phase === "play");
+}
+/* 日志条增量渲染：按 id 复用已有节点，只把最新一条插到最前面并淡入。
+   旧实现每次 log() 都整块重建，4 条记录一起重播 pop(scale .4→1) —— 这就是"一直晃"。 */
+function renderLog() {
+  const box = $("log");
+  const list = state.logs.slice(0, 2);           // 只显示最新 + 上一条（弱化处理）
+  const ids = list.map(function (e) { return e.id; }).join(",");
+  if (ids === view.logIds) return;
+  const prevTop = view.logIds ? String(view.logIds).split(",")[0] : "";
+  view.logIds = ids;
+  const pool = {};
+  Array.prototype.slice.call(box.children).forEach(function (n) { pool[n.dataset.logId] = n; });
+  box.textContent = "";
+  list.forEach(function (e, i) {
+    const node = pool[e.id] || el("div", "log-line");
+    node.dataset.logId = String(e.id);
+    node.textContent = e.text;
+    if (i === 0 && String(e.id) !== prevTop) node.classList.add("in");
+    else node.classList.remove("in");            // 复用节点时先清掉，避免重新插入时重播
+    box.appendChild(node);
+  });
+}
+function renderAll() {
+  renderTop(); renderSeats(); renderCenter(); renderHand(); renderLog();
+}
+function setHint(t) { $("handHint").textContent = t; }
+function log(t) {
+  state.logSeq++;
+  state.logs.unshift({ id: state.logSeq, text: t });
+  if (state.logs.length > 8) state.logs.pop();
+  renderLog();
+}
+let toastTimer = 0;
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2400);
+}
+function showBanner(big, small) {
+  const b = $("banner");
+  b.textContent = "";
+  b.appendChild(document.createTextNode(big));
+  b.appendChild(el("span", null, small));
+  b.classList.remove("go");
+  void b.offsetWidth;            // 强制重排以便重播动画
+  b.classList.add("go");
+}
+
+/* SECTION: turn flow */
+function advance(n) {
+  state.turn = ((state.turn + state.dir * n) % 4 + 4) % 4;
+}
+function nextOf(pid) { return ((pid + state.dir) % 4 + 4) % 4; }
+
+function startGame() {
+  state.players = [
+    { id: 0, name: "你", jp: "あなた", hand: [], played: 0 },
+    { id: 1, name: AI_NAMES[0].name, jp: AI_NAMES[0].jp, hand: [], played: 0 },
+    { id: 2, name: AI_NAMES[1].name, jp: AI_NAMES[1].jp, hand: [], played: 0 },
+    { id: 3, name: AI_NAMES[2].name, jp: AI_NAMES[2].jp, hand: [], played: 0 }
+  ];
+  uidSeq = 0;
+  state.deck = buildDeck(state.mode);
+  state.discard = [];
+  state.dir = 1;
+  state.turn = 0;
+  state.round = 0;
+  state.myKana = [];
+  state.logs = [];
+  state.lastDrawn = "";
+  state.phase = "play";
+  state.busy = false;
+  state.drawnThisTurn = false;
+  deal(7);
+  // 翻首牌：万能牌埋回牌库重洗，避免出现开局选色
+  let first = state.deck.pop();
+  let guard = 0;
+  while (first && isWild(first) && guard++ < 12) {
+    state.deck.splice(Math.floor(Math.random() * state.deck.length), 0, first);
+    first = state.deck.pop();
+  }
+  state.discard.push(first);
+  state.activeColor = first.color;
+  log("开局弃牌「" + first.face + "」(" + first.romaji + ") · " + COLORS[first.color].zh + "。你先手，顺时针。");
+  resetView();                       // 重开一局：uid 重新计数，必须丢弃上一局的渲染缓存
+  $("startOverlay").hidden = true;
+  $("resultOverlay").hidden = true;
+  setHint("同色（同段）・同字符・同行（同子音列）・万能牌，满足其一即可出牌");
+  renderAll();
+  beginTurn();
+  sfx("start");
+}
+
+function beginTurn() {
+  if (state.phase !== "play") return;
+  state.round++;
+  state.drawnThisTurn = false;
+  state.lastDrawn = "";
+  renderAll();
+  if (isHuman(state.turn)) {
+    state.busy = false;
+    const can = playableHand(0);
+    if (can.length) setHint("你的回合：可出 " + can.length + " 张（发光上浮的那几张）。");
+    else setHint("没有可出的牌，点山牌摸一张。");
+    renderHand();
+  } else {
+    state.busy = true;
+    setHint(nameOf(state.turn) + " 行动中…");
+    renderHand();
+    setTimeout(aiTurn, 900 + Math.random() * 500);
+  }
+}
+
+// 出牌落地：模型更新 → 效果结算 → 换手
+function commitPlay(pid, card, colorChoice) {
+  if (state.phase !== "play") return;
+  state.busy = true;
+  const p = state.players[pid];
+  const node = pid === 0 ? document.querySelector('#hand .card[data-uid="' + card.uid + '"]') : null;
+  if (node) node.classList.add("played");
+  // JUMP 预标记：即将被连带打出的同音牌，也一起播飞出动效（逐张错峰）
+  if (pid === 0 && card.kind === "normal") {
+    let tw = 0;
+    p.hand.forEach(function (c) {
+      if (c === card || c.kind !== "normal" || c.base !== card.base) return;
+      const tn = document.querySelector('#hand .card[data-uid="' + c.uid + '"]');
+      if (tn) { tn.classList.add("played"); tn.style.animationDelay = (90 + tw * 100) + "ms"; }
+      tw++;
+    });
+  }
+  setTimeout(function () {
+    const idx = p.hand.indexOf(card);
+    if (idx >= 0) p.hand.splice(idx, 1);
+    const prevTop = topCard();                // 记录"上一张"，便于判断是否靠同行接上牌
+    state.discard.push(card);
+    p.played++;
+    state.activeColor = isWild(card) ? (colorChoice || state.activeColor) : card.color;
+    if (pid === 0) state.myKana.push(card.face + "(" + card.romaji + ")");
+    // JUMP：用户打出普通假名牌后，手中其余同音普通牌（如 と / ト）自动一并打出；
+    //       万能牌 んン 与 〆 / 々 / ゐヰゑヱ 等功能牌均不参与
+    if (pid === 0 && card.kind === "normal") {
+      const twins = p.hand.filter(function (c) { return c.kind === "normal" && c.base === card.base; });
+      twins.forEach(function (c) {
+        const j = p.hand.indexOf(c);
+        if (j >= 0) p.hand.splice(j, 1);
+        state.discard.push(c);
+        p.played++;
+        state.myKana.push(c.face + "(" + c.romaji + ")");
+      });
+      if (twins.length) {
+        showBanner("JUMP", "同音一并打出 " + (twins.length + 1) + " 枚");
+        log("JUMP! " + card.face + " ＋ " + twins.map(faceOf).join("・") + " 一并打出");
+        sfx("kuno");
+      }
+    }
+    const nxt = nextOf(pid);
+    let skipNext = false;
+    const who = nameOf(pid);
+    if (card.kind === "skip") {
+      skipNext = true;
+      showBanner("〆", "パス · 下家跳过");
+      log(who + " 打出 〆(sime) → " + nameOf(nxt) + " 被跳过");
+      sfx("rev");
+    } else if (card.kind === "draw2") {
+      skipNext = true;
+      const g = drawN(nxt, 2);
+      showBanner("々", "+2 · " + nameOf(nxt) + " 摸牌并跳过");
+      log(who + " 打出 々(noma) → " + nameOf(nxt) + " 摸 " + g + " 张并跳过");
+      sfx("draw");
+    } else if (card.kind === "reverse") {
+      state.dir *= -1;
+      showBanner(card.face, "リバース · " + (state.dir === 1 ? "顺时针" : "逆时针"));
+      log(who + " 打出 " + card.face + "(" + card.romaji + ") → 方向变" + (state.dir === 1 ? "顺时针" : "逆时针"));
+      sfx("rev");
+    } else if (card.kind === "wild") {
+      showBanner("んン", "色指定 · " + COLORS[state.activeColor].zh + " " + COLORS[state.activeColor].hira);
+      log(who + " 打出万能牌 んン(n) → 指定 " + COLORS[state.activeColor].zh + " " + COLORS[state.activeColor].hira);
+      sfx("wild");
+    } else if (card.kind === "wild4") {
+      skipNext = true;
+      const g = drawN(nxt, 4);
+      showBanner("+4 んン", "+4 · 色指定 " + COLORS[state.activeColor].zh);
+      log(who + " 打出 +4 んン → " + nameOf(nxt) + " 摸 " + g + " 张并跳过，颜色变 " + COLORS[state.activeColor].zh);
+      sfx("draw");
+    } else {
+      log(who + " 打出 " + card.face + "(" + card.romaji + ") · " + COLORS[card.color].zh + card.dan
+        + (card.row ? " · " + card.row : "") + (sameRow(card, prevTop) ? "（同行跨色接续）" : ""));
+      sfx("play");
+    }
+    renderAll();
+    if (p.hand.length === 0) { setTimeout(function () { endGame(pid); }, 720); return; }
+    if (p.hand.length === 1) {
+      log("★ " + who + " 喊出 KUNO！只剩一张牌");
+      toast("KUNO!  " + who + " 只剩 1 张牌");
+      sfx("kuno");
+    }
+    setTimeout(function () { advance(skipNext ? 2 : 1); beginTurn(); }, 640);
+  }, node ? 230 : 0);
+}
+
+function humanPlay(card) {
+  if (state.phase !== "play") return;
+  if (state.turn !== 0 || state.busy) {
+    toast(rejectReason(card));
+    flashBad(card);
+    return;
+  }
+  if (!canPlay(card)) {
+    toast(rejectReason(card));
+    flashBad(card);
+    sfx("bad");
+    return;
+  }
+  if (isWild(card)) { openColorPicker(card); return; }
+  commitPlay(0, card, null);
+}
+function flashBad(card) {
+  const node = document.querySelector('#hand .card[data-uid="' + card.uid + '"]');
+  if (!node) return;
+  node.classList.remove("shake");
+  void node.offsetWidth;
+  node.classList.add("shake");
+  setTimeout(function () { node.classList.remove("shake"); }, 460);
+}
+function humanDraw() {
+  if (state.phase !== "play") return;
+  if (state.turn !== 0 || state.busy) { toast("现在是 " + nameOf(state.turn) + " 的回合。"); return; }
+  if (state.drawnThisTurn) { toast("本回合已经摸过牌了，请按「结束回合」。"); return; }
+  const c = drawOne(0);
+  state.drawnThisTurn = true;
+  if (!c) {
+    toast("山牌与弃牌都已空，本回合跳过。");
+    state.busy = true;
+    renderAll();
+    setTimeout(function () { advance(1); beginTurn(); }, 700);
+    return;
+  }
+  state.lastDrawn = c.uid;
+  renderAll();
+  sfx("draw");
+  toast("摸到 " + c.face + "(" + c.romaji + ") · " + COLORS[c.color].zh);
+  if (canPlay(c)) {
+    setHint("刚摸到的牌可以出！出牌或按「结束回合」。");
+    state.drawnThisTurn = true;
+    renderHand();
+  } else {
+    setHint("摸到的牌出不了，回合自动结束。");
+    state.busy = true;
+    renderHand();
+    setTimeout(function () { advance(1); beginTurn(); }, 1000);
+  }
+}
+function humanEndTurn() {
+  if (state.phase !== "play" || state.turn !== 0 || state.busy) return;
+  if (!state.drawnThisTurn) { toast("手上还能出牌时不能跳过——先出牌，或摸一张。"); return; }
+  advance(1);
+  beginTurn();
+}
+function endGame(winner) {
+  state.phase = "over";
+  state.busy = true;
+  renderAll();
+  const win = winner === 0;
+  $("resTitle").textContent = win ? "あなたの勝ち！おめでとう" : nameOf(winner) + " の勝ち…";
+  if (win) {
+    $("resJp").textContent = "見事でした！五十音の「段」が体で覚わってきましたね。";
+    $("resZh").textContent = "漂亮！赢下这一局，说明你已经把「段＝颜色」的对应关系记进肌肉里了。";
+  } else {
+    $("resJp").textContent = "惜しい！あと一歩でした。次は勝ちましょう！";
+    $("resZh").textContent = "就差一点点！复盘一下打错的假名，下一局一定更顺。";
+  }
+  const box = $("resScore");
+  box.textContent = "";
+  state.players.forEach(function (p) {
+    const one = el("div");
+    one.appendChild(el("b", null, String(p.played)));
+    one.appendChild(el("span", null, p.name + " 出牌 · 剩 " + p.hand.length + " 张"));
+    box.appendChild(one);
+  });
+  const roundStat = el("div");
+  roundStat.appendChild(el("b", null, String(state.round)));
+  roundStat.appendChild(el("span", null, "行動手数 / 总出牌回合"));
+  box.appendChild(roundStat);
+  const echo = $("resKana");
+  echo.textContent = "";
+  if (state.myKana.length) {
+    echo.textContent = state.myKana.slice(0, 40).join(" ");
+  } else {
+    echo.textContent = "本局你还没打出假名牌。";
+  }
+  $("resultOverlay").hidden = false;
+  sfx(win ? "win" : "lose");
+}
+
+/* SECTION: ai */
+// AI 策略：优先功能牌 → 能出完的牌 → 同色牌 → 保留万能牌；无匹配则摸牌
+function aiChoose(pid, options) {
+  const p = state.players[pid];
+  if (p.hand.length === 1) return options[0];
+  const score = { draw2: 95, skip: 90, reverse: 80 };
+  let best = null, bestScore = -1;
+  options.forEach(function (c) {
+    let s = 40;
+    if (c.kind === "normal") {
+      s = 52 + Math.min(12, countColor(p, c.color));
+      if (c.color === state.activeColor) s += 6;
+    } else if (score[c.kind]) {
+      s = score[c.kind];
+    } else if (c.kind === "wild") {
+      s = 18;
+    } else if (c.kind === "wild4") {
+      s = 12;
+    }
+    if (s > bestScore) { bestScore = s; best = c; }
+  });
+  return best || options[0];
+}
+function countColor(p, color) {
+  let n = 0;
+  p.hand.forEach(function (c) { if (c.color === color) n++; });
+  return n;
+}
+function pickWildColor(pid, card) {
+  if (!isWild(card)) return null;
+  if (pid === 0) return null;                 // 人类由选色弹窗决定
+  const p = state.players[pid];
+  let best = state.activeColor, bestN = -1;
+  COLOR_ORDER.forEach(function (col) {
+    const n = countColor(p, col);
+    if (n > bestN) { bestN = n; best = col; }
+  });
+  return best;
+}
+function aiTurn() {
+  if (state.phase !== "play" || isHuman(state.turn)) return;
+  const pid = state.turn;
+  const p = state.players[pid];
+  const options = playableHand(pid);
+  if (!options.length) {
+    const c = drawOne(pid);
+    renderAll();
+    if (!c) {
+      log(nameOf(pid) + " 无牌可摸，跳过回合。");
+      setTimeout(function () { advance(1); beginTurn(); }, 600);
+      return;
+    }
+    sfx("draw");
+    if (canPlay(c)) {
+      log(nameOf(pid) + " 摸牌后出牌。");
+      setTimeout(function () { commitPlay(pid, c, pickWildColor(pid, c)); }, 620);
+    } else {
+      log(nameOf(pid) + " 摸了一张，没有可出的牌。");
+      setTimeout(function () { advance(1); beginTurn(); }, 760);
+    }
+    return;
+  }
+  const pick = aiChoose(pid, options);
+  setTimeout(function () { commitPlay(pid, pick, pickWildColor(pid, pick)); }, 340);
+}
+
+/* SECTION: color picker */
+let pendingWild = null;
+function closePicker(cancelled) {
+  $("pickOverlay").hidden = true;
+  if (cancelled && pendingWild) {
+    pendingWild = null;
+    state.busy = false;
+    renderHand();
+    setHint("已收回万能牌，重新选择出牌。");
+  }
+}
+function openColorPicker(card) {
+  pendingWild = card;
+  state.busy = true;            // 选色期间锁定手牌，避免重复出牌
+  renderHand();
+  const grid = $("pickGrid");
+  grid.textContent = "";
+  COLOR_ORDER.forEach(function (col) {
+    const b = el("button", "pick-btn");
+    b.type = "button";
+    b.style.background = COLORS[col].css;
+    b.appendChild(el("span", null, COLORS[col].zh + " / " + COLORS[col].ja));
+    b.appendChild(el("small", null, COLORS[col].hira + " ・ " + COLORS[col].kata));
+    b.addEventListener("click", function () {
+      const c = pendingWild;
+      closePicker(false);
+      $("pickGrid").textContent = "";
+      if (c) commitPlay(0, c, col);
+    });
+    grid.appendChild(b);
+  });
+  $("pickOverlay").hidden = false;
+  const first = grid.querySelector("button");
+  if (first) first.focus();
+}
+
+/* SECTION: sound（无外部依赖，WebAudio 合成） */
+let audioCtx = null, soundOn = false;
+const TONE = { play: 520, draw: 300, skip: 300, rev: 660, wild: 760, kuno: 880, bad: 170, start: 440, win: 990, lose: 220 };
+function sfx(type) {
+  if (!soundOn) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const f = TONE[type] || 440;
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type === "bad" ? "square" : "triangle";
+    o.frequency.value = f;
+    g.gain.value = 0.0001;
+    o.connect(g); g.connect(audioCtx.destination);
+    const t0 = audioCtx.currentTime;
+    g.gain.exponentialRampToValueAtTime(0.16, t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.24);
+    o.start(t0); o.stop(t0 + 0.26);
+  } catch (e) { /* 静音降级，不影响游戏 */ }
+}
+
+/* SECTION: static builders */
+function buildModeList() {
+  const box = $("modeList");
+  box.textContent = "";
+  Object.keys(MODES).forEach(function (key) {
+    const b = el("button", "mode-opt");
+    b.type = "button";
+    b.dataset.mode = key;
+    b.appendChild(el("div", "t", MODES[key].name));
+    b.appendChild(el("div", "d", MODES[key].zh + "。" + MODES[key].desc));
+    if (key === state.mode) b.classList.add("sel");
+    b.addEventListener("click", function () {
+      state.mode = key;
+      box.querySelectorAll(".mode-opt").forEach(function (n) { n.classList.toggle("sel", n === b); });
+      sfx("play");
+    });
+    box.appendChild(b);
+  });
+}
+function buildLegend(tableEl, symEl) {
+  tableEl.textContent = "";
+  const head = document.createElement("tr");
+  ["色 / 颜色", "段", "音", "登場仮名"].forEach(function (h) { head.appendChild(el("th", null, h)); });
+  tableEl.appendChild(head);
+  SEGMENTS.forEach(function (seg) {
+    const tr = document.createElement("tr");
+    const c1 = el("td");
+    const sw = el("span", "sw");
+    sw.style.background = COLORS[seg.color].css;
+    c1.appendChild(sw);
+    c1.appendChild(document.createTextNode(COLORS[seg.color].zh + " " + COLORS[seg.color].ja));
+    tr.appendChild(c1);
+    tr.appendChild(el("td", null, COLORS[seg.color].hira + " / " + COLORS[seg.color].kata));
+    tr.appendChild(el("td", null, "/" + seg.key + "/"));
+    const cell = el("td", "kana-cell");
+    cell.textContent = seg.rows.map(function (r) { return r[0]; }).join("・");
+    tr.appendChild(cell);
+    tableEl.appendChild(tr);
+  });
+  symEl.textContent = "";
+  const syms = [
+    ["〆", "sime", "パス / 跳过下家", "赤青緑黄紫 各1枚"],
+    ["々", "noma", "+2 / 下家摸2并跳过", "赤青緑黄紫 各1枚"],
+    ["ゐヰゑヱ", "wi we", "リバース / 反转（一张牌・2*2 排列）", "青 1枚・紫 1枚"],
+    ["んン", "n", "万能 / 指定颜色", "黒 4枚"],
+    ["+4 んン", "+4 n", "万能+4 / 下家摸4并跳过", "黒 4枚"]
+  ];
+  syms.forEach(function (s) {
+    const chip = el("span", "sym-chip");
+    chip.appendChild(el("b", null, s[0]));
+    chip.appendChild(el("span", "r", s[1]));
+    chip.appendChild(document.createTextNode(" " + s[2] + " · " + s[3]));
+    symEl.appendChild(chip);
+  });
+}
+
+// 行分组图例：ま行 ま・み・む・め・も（横跨 4~5 种颜色）
+function buildRowLegend(box) {
+  if (!box) return;
+  box.textContent = "";
+  const groups = {};
+  SEGMENTS.forEach(function (seg) {
+    seg.rows.forEach(function (row) {
+      const r = ROW_MAP[row[2]];
+      if (!r) return;
+      if (!groups[r]) groups[r] = [];
+      groups[r].push(row[0] + "(" + row[2] + ")");
+    });
+  });
+  ROW_ORDER.forEach(function (r) {
+    const chip = el("span", "sym-chip");
+    chip.appendChild(el("b", null, r));
+    chip.appendChild(document.createTextNode(" " + (groups[r] || []).join("・")));
+    box.appendChild(chip);
+  });
+}
+
+/* SECTION: boot */
+function boot() {
+  buildColorbar();
+  buildModeList();
+  buildLegend($("legendTable"), $("legendSym"));
+  buildLegend($("legendTable2"), $("legendSym2"));
+  buildRowLegend($("legendRow"));
+  buildRowLegend($("legendRow2"));
+  renderAll();
+  $("btnStart").addEventListener("click", function () { startGame(); });
+  $("btnAgain").addEventListener("click", function () { startGame(); });
+  $("btnBackMode").addEventListener("click", function () {
+    $("resultOverlay").hidden = true;
+    $("startOverlay").hidden = false;
+    state.phase = "start";
+    renderAll();
+  });
+  $("btnDraw").addEventListener("click", humanDraw);
+  $("drawPile").addEventListener("click", humanDraw);
+  $("drawPile").addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); humanDraw(); }
+  });
+  $("btnEnd").addEventListener("click", humanEndTurn);
+  $("btnRule").addEventListener("click", function () { $("ruleOverlay").hidden = false; });
+  $("btnCloseRule").addEventListener("click", function () { $("ruleOverlay").hidden = true; });
+  $("btnSound").addEventListener("click", function () {
+    soundOn = !soundOn;
+    $("btnSound").textContent = soundOn ? "音效 开" : "音效 关";
+    $("btnSound").classList.toggle("on", soundOn);
+    if (soundOn) sfx("play");
+  });
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape") {
+      $("ruleOverlay").hidden = true;
+      if (!$("pickOverlay").hidden) { $("pickOverlay").hidden = true; pendingWild = null; }
+    }
+    if (ev.key === "d" || ev.key === "D") humanDraw();
+  });
+  setHint("モードを選んで「ゲームスタート」/ 选好模式后点开始");
+}
+boot();
+</script>
+</body>
+</html>
