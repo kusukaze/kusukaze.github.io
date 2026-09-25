@@ -300,7 +300,7 @@ button{font-family:inherit;color:inherit}
     <ul class="rules">
       <li>出牌满足其一：<b>同色（＝同段）</b>、<b>同字符（同符号类型）</b>、<b>同行（同子音列，如 ま 可接む・め・も・み）</b>、<b>万能牌</b>。</li>
       <li>混合模式下「あ＝ア」视为同一字符，可跨色互接；出牌后颜色随新牌。</li>
-      <li>〆(sime) 跳过下家・ゐヰゑヱ(wi we) 一张牌反转顺序（蓝紫可互接）・んン(n) 变色×4。</li>
+      <li>〆(shime) 跳过下家・ゐヰゑヱ(wi we) 一张牌反转顺序（蓝紫可互接）・んン(n) 变色×4。</li>
       <li><b>+2 / +4 接牌挑战</b>：打出 々(noma) 不再直接让下家摸牌——下家只能用 々(+2) 或 +4 んン 接牌，罚牌逐档累加（+2 加 2、+4 加 4）；一旦有人接出 +4，后面就只能用 +4 继续。直接打出 +4 んン 同理：后面只能出 +4。第一位接不上（或主动点山牌认罚）的玩家摸走全部累加罚牌并跳过回合。</li>
       <li><b>JUMP</b>：任意一名玩家打出普通假名牌时，手里完全相同的另一张普通牌（如 と 与 ト，不含 ん ゐ 等功能牌）可直接一并跳出。</li>
       <li>手牌只剩 1 张时自动高喊 <b>KUNO！</b></li>
@@ -400,7 +400,7 @@ const ROW_ORDER = ["あ行", "か行", "さ行", "た行", "な行", "は行", "
 
 // 完整符号-罗马音映射表（含 Kuno 专属符号）
 const SYMBOL_MAP = {
-  "〆":"sime", "々":"noma", "ゐヰゑヱ":"wi we", "んン":"n", "+4 んン":"+4 n"
+  "〆":"shime", "々":"noma", "ゐヰゑヱ":"wi we", "んン":"n", "+4 んン":"+4 n"
 };
 // Reverse 为一张牌：ゐ ヰ / ゑ ヱ 四假名 2*2 组合体，罗马音 wi we
 const REVERSE_FACE = "ゐヰゑヱ";
@@ -946,7 +946,7 @@ function commitPlay(pid, card, colorChoice) {
     if (card.kind === "skip") {
       skipNext = true;
       showBanner("〆", "パス · 下家跳过");
-      log(who + " 打出 〆(sime) → " + nameOf(nxt) + " 被跳过");
+      log(who + " 打出 〆(shime) → " + nameOf(nxt) + " 被跳过");
       sfx("rev");
     } else if (card.kind === "draw2") {
       sfx("draw");
@@ -1295,7 +1295,7 @@ function buildLegend(tableEl, symEl) {
   });
   symEl.textContent = "";
   const syms = [
-    ["〆", "sime", "パス / 跳过下家", "赤青緑黄紫 各1枚"],
+    ["〆", "shime", "パス / 跳过下家", "赤青緑黄紫 各1枚"],
     ["々", "noma", "+2 接牌挑战 / 下家只能用 +2 或 +4 接，接不上摸全部累加罚牌", "赤青緑黄紫 各1枚"],
     ["ゐヰゑヱ", "wi we", "リバース / 反转（一张牌・2*2 排列）", "青 1枚・紫 1枚"],
     ["んン", "n", "万能 / 指定颜色", "黒 4枚"],
