@@ -479,7 +479,7 @@ function buildDeck(mode) {
       });
     });
   });
-  // 2) 〆 / 々：每种颜色各 1 张 → 5 色 × 2 种 = 10 张，无段名
+  // 2) 〆 / 々 / ゐヰゑヱ：每种颜色各 1 张 → 5 色 × 2 种 = 10 张，无段名
   COLOR_ORDER.forEach(function (col) {
     deck.push(makeCard({ kind:"skip",   color:col, base:"sym:skip",   face:"〆", romaji:SYMBOL_MAP["〆"], script:"sym", dan:"", scrTag:"" }));
     deck.push(makeCard({ kind:"draw2",  color:col, base:"sym:draw2",  face:"々", romaji:SYMBOL_MAP["々"], script:"sym", dan:"", scrTag:"" }));
