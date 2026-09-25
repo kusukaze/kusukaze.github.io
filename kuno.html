@@ -300,8 +300,9 @@ button{font-family:inherit;color:inherit}
     <ul class="rules">
       <li>出牌满足其一：<b>同色（＝同段）</b>、<b>同字符（同符号类型）</b>、<b>同行（同子音列，如 ま 可接む・め・も・み）</b>、<b>万能牌</b>。</li>
       <li>混合模式下「あ＝ア」视为同一字符，可跨色互接；出牌后颜色随新牌。</li>
-      <li>〆(sime) 跳过下家・々(noma) 下家摸2并跳过・ゐヰゑヱ(wi we) 一张牌反转顺序（蓝紫可互接）・んン(n) 变色×4・+4 んン(+4 n) 下家摸4并跳过×4。</li>
-      <li><b>JUMP</b>：你打出普通假名牌时，手里同音的另一张普通牌（如 と 与 ト）会自动一并打出。</li>
+      <li>〆(sime) 跳过下家・ゐヰゑヱ(wi we) 一张牌反转顺序（蓝紫可互接）・んン(n) 变色×4。</li>
+      <li><b>+2 / +4 接牌挑战</b>：打出 々(noma) 不再直接让下家摸牌——下家只能用 々(+2) 或 +4 んン 接牌，罚牌逐档累加（+2 加 2、+4 加 4）；一旦有人接出 +4，后面就只能用 +4 继续。直接打出 +4 んン 同理：后面只能出 +4。第一位接不上（或主动点山牌认罚）的玩家摸走全部累加罚牌并跳过回合。</li>
+      <li><b>JUMP</b>：任意一名玩家打出普通假名牌时，手里完全相同的另一张普通牌（如 と 与 ト，不含 ん ゐ 等功能牌）可直接一并跳出。</li>
       <li>手牌只剩 1 张时自动高喊 <b>KUNO！</b></li>
       <li>先出完手牌者胜利；山牌摸完自动把弃牌堆洗回。</li>
     </ul>
@@ -430,6 +431,7 @@ const state = {
   phase: "start",        // start | play | over
   busy: false,           // 锁定人类输入（AI 行动中 / 结算中）
   drawnThisTurn: false,  // 本回合已摸牌（摸到可出的牌时允许继续出牌）
+  challenge: null,       // +2/+4 接牌挑战链 { mode:"draw2"|"wild4", total, from, target }
   lastDrawn: "",         // 刚摸到的牌 uid，用于入手动画
   round: 0,
   myKana: [],            // 人类打出的假名，用于结算复盘
@@ -504,7 +506,16 @@ function topCard() { return state.discard.length ? state.discard[state.discard.l
 function sameRow(a, b) {
   return !!(a && b && a.row && b.row && a.row === b.row);
 }
+// 接牌挑战中：只允许用 々(+2) 接 +2 链（+4 出现后 +2 不再被接受），+4 んン 始终可接
+function challengeAllows(card) {
+  const ch = state.challenge;
+  if (!ch) return true;
+  if (card.kind === "wild4") return true;
+  if (ch.mode === "draw2" && card.kind === "draw2") return true;
+  return false;
+}
 function canPlay(card, color) {
+  if (state.challenge) return challengeAllows(card);                // 挑战接牌：只认 々(+2) / +4 んン
   if (isWild(card)) return true;                                   // 万能牌：接在任意牌后
   const useColor = color || state.activeColor;
   if (card.color === useColor) return true;                        // 同色（= 同段）
@@ -517,6 +528,12 @@ function canPlay(card, color) {
 function rejectReason(card) {
   if (state.phase !== "play") return "游戏还没开始。";
   if (state.turn !== 0 || state.busy) return "现在是 " + nameOf(state.turn) + " 的回合，稍等一下。";
+  if (state.challenge && state.challenge.target === 0 && state.turn === 0 && !state.busy) {
+    const ch = state.challenge;
+    return ch.mode === "draw2"
+      ? "々 接牌挑战中（累计罚牌 " + ch.total + " 张）：只能出 々(+2) 或 +4 んン，接不上就点山牌摸走全部罚牌。"
+      : "+4 接牌挑战中（累计罚牌 " + ch.total + " 张）：只能出 +4 んン 接牌，接不上就点山牌摸走全部罚牌。";
+  }
   const col = COLORS[state.activeColor];
   const top = topCard();
   const topRow = top && top.row ? "（" + top.row + "）" : "";
@@ -708,6 +725,19 @@ function renderHand() {
   const mine = state.phase === "play" && state.turn === 0 && !state.busy;
   $("btnDraw").disabled = !mine || state.drawnThisTurn;
   $("btnEnd").disabled = !mine || !state.drawnThisTurn;
+  // 人类处于接牌挑战回合时，摸牌按钮切换为"接受罚牌"，张数随累加更新
+  const chMe = mine && !!state.challenge && state.challenge.target === 0;
+  const drawBtn = $("btnDraw");
+  const wantMode = chMe ? "pen" : "std";
+  if (drawBtn.dataset.mode !== wantMode) {
+    drawBtn.dataset.mode = wantMode;
+    drawBtn.innerHTML = chMe
+      ? '罰で引く<br><span style="font-size:11px;font-weight:700">接受罚牌 +' + state.challenge.total + ' 张</span>'
+      : '山札を引く<br><span style="font-size:11px;font-weight:700">摸一张</span>';
+  } else if (chMe) {
+    const sp = drawBtn.querySelector("span");
+    if (sp) sp.textContent = "接受罚牌 +" + state.challenge.total + " 张";
+  }
   if (!p) { hand.textContent = ""; view.handSig = "none"; return; }
   const okSet = {};
   if (mine) playableHand(0).forEach(function (c) { okSet[c.uid] = true; });
@@ -837,14 +867,29 @@ function beginTurn() {
   state.drawnThisTurn = false;
   state.lastDrawn = "";
   renderAll();
+  const ch = state.challenge;
+  const challengedHere = !!(ch && ch.target === state.turn);
   if (isHuman(state.turn)) {
     state.busy = false;
+    if (challengedHere) {
+      setHint(ch.mode === "draw2"
+        ? "被 々 挑战（累计罚牌 " + ch.total + " 张）：只能出 々(+2) 或 +4 んン 接牌，或点山牌摸走全部罚牌。"
+        : "被 +4 挑战（累计罚牌 " + ch.total + " 张）：只能出 +4 んン 接牌，或点山牌摸走全部罚牌。");
+      renderHand();
+      return;
+    }
     const can = playableHand(0);
     if (can.length) setHint("你的回合：可出 " + can.length + " 张（发光上浮的那几张）。");
     else setHint("没有可出的牌，点山牌摸一张。");
     renderHand();
   } else {
     state.busy = true;
+    if (challengedHere) {
+      setHint(nameOf(state.turn) + " 应对挑战中…");
+      renderHand();
+      setTimeout(aiChallengeTurn, 900 + Math.random() * 500);
+      return;
+    }
     setHint(nameOf(state.turn) + " 行动中…");
     renderHand();
     setTimeout(aiTurn, 900 + Math.random() * 500);
@@ -876,37 +921,44 @@ function commitPlay(pid, card, colorChoice) {
     p.played++;
     state.activeColor = isWild(card) ? (colorChoice || state.activeColor) : card.color;
     if (pid === 0) state.myKana.push(card.face + "(" + card.romaji + ")");
-    // JUMP：用户打出普通假名牌后，手中其余同音普通牌（如 と / ト）自动一并打出；
-    //       万能牌 んン 与 〆 / 々 / ゐヰゑヱ 等功能牌均不参与
-    if (pid === 0 && card.kind === "normal") {
+    // JUMP：任意一名玩家打出普通假名牌时，手中完全相同（同字符，如 と/ト）的另一张普通牌直接一并打出；
+    //       功能牌 〆 / 々 / ゐヰゑヱ / んン（含 +4）一律不参与
+    if (card.kind === "normal") {
       const twins = p.hand.filter(function (c) { return c.kind === "normal" && c.base === card.base; });
       twins.forEach(function (c) {
         const j = p.hand.indexOf(c);
         if (j >= 0) p.hand.splice(j, 1);
         state.discard.push(c);
         p.played++;
-        state.myKana.push(c.face + "(" + c.romaji + ")");
+        if (pid === 0) state.myKana.push(c.face + "(" + c.romaji + ")");
       });
       if (twins.length) {
-        showBanner("JUMP", "同音一并打出 " + (twins.length + 1) + " 枚");
-        log("JUMP! " + card.face + " ＋ " + twins.map(faceOf).join("・") + " 一并打出");
+        showBanner("JUMP", nameOf(pid) + " · 同字符一并打出 " + (twins.length + 1) + " 枚");
+        log("JUMP! " + nameOf(pid) + " 的 " + card.face + " ＋ " + twins.map(faceOf).join("・") + " 完全相同直接跳出");
         sfx("kuno");
       }
     }
     const nxt = nextOf(pid);
     let skipNext = false;
     const who = nameOf(pid);
+    const ch = state.challenge;
+    const responding = !!(ch && ch.target === pid);   // 本张牌是对 +2/+4 挑战的接牌
     if (card.kind === "skip") {
       skipNext = true;
       showBanner("〆", "パス · 下家跳过");
       log(who + " 打出 〆(sime) → " + nameOf(nxt) + " 被跳过");
       sfx("rev");
     } else if (card.kind === "draw2") {
-      skipNext = true;
-      const g = drawN(nxt, 2);
-      showBanner("々", "+2 · " + nameOf(nxt) + " 摸牌并跳过");
-      log(who + " 打出 々(noma) → " + nameOf(nxt) + " 摸 " + g + " 张并跳过");
       sfx("draw");
+      if (responding && ch.mode === "draw2") {
+        ch.total += 2; ch.from = pid; ch.target = nxt;
+        showBanner("々", "+2 接牌 · 累计罚 " + ch.total + " 张");
+        log(who + " 用 々(noma) 接上挑战 → 罚牌累计 " + ch.total + " 张，" + nameOf(nxt) + " 只能用 +2 或 +4 继续");
+      } else {
+        state.challenge = { mode: "draw2", total: 2, from: pid, target: nxt };
+        showBanner("々", "+2 挑战 · " + nameOf(nxt) + " 只能接 +2/+4");
+        log(who + " 打出 々(noma) → " + nameOf(nxt) + " 被 +2 挑战：只能出 々(+2) 或 +4 んン，接不上则摸走全部累加罚牌");
+      }
     } else if (card.kind === "reverse") {
       state.dir *= -1;
       showBanner(card.face, "リバース · " + (state.dir === 1 ? "顺时针" : "逆时针"));
@@ -917,18 +969,23 @@ function commitPlay(pid, card, colorChoice) {
       log(who + " 打出万能牌 んン(n) → 指定 " + COLORS[state.activeColor].zh + " " + COLORS[state.activeColor].hira);
       sfx("wild");
     } else if (card.kind === "wild4") {
-      skipNext = true;
-      const g = drawN(nxt, 4);
-      showBanner("+4 んン", "+4 · 色指定 " + COLORS[state.activeColor].zh);
-      log(who + " 打出 +4 んン → " + nameOf(nxt) + " 摸 " + g + " 张并跳过，颜色变 " + COLORS[state.activeColor].zh);
       sfx("draw");
+      if (responding) {
+        ch.total += 4; ch.mode = "wild4"; ch.from = pid; ch.target = nxt;
+        showBanner("+4 んン", "挑战升级 +4 · 累计罚 " + ch.total + " 张");
+        log(who + " 用 +4 んン 接上挑战 → 罚牌累计 " + ch.total + " 张，指定 " + COLORS[state.activeColor].zh + "，此后只能出 +4，" + nameOf(nxt) + " 需继续接牌");
+      } else {
+        state.challenge = { mode: "wild4", total: 4, from: pid, target: nxt };
+        showBanner("+4 んン", "+4 挑战 · 只能出 +4 接");
+        log(who + " 打出 +4 んン → 指定 " + COLORS[state.activeColor].zh + "，" + nameOf(nxt) + " 被 +4 挑战：只能出 +4 んン 接牌，接不上则摸走全部累加罚牌");
+      }
     } else {
       log(who + " 打出 " + card.face + "(" + card.romaji + ") · " + COLORS[card.color].zh + card.dan
         + (card.row ? " · " + card.row : "") + (sameRow(card, prevTop) ? "（同行跨色接续）" : ""));
       sfx("play");
     }
     renderAll();
-    if (p.hand.length === 0) { setTimeout(function () { endGame(pid); }, 720); return; }
+    if (p.hand.length === 0) { state.challenge = null; setTimeout(function () { endGame(pid); }, 720); return; }
     if (p.hand.length === 1) {
       log("★ " + who + " 喊出 KUNO！只剩一张牌");
       toast("KUNO!  " + who + " 只剩 1 张牌");
@@ -965,6 +1022,8 @@ function flashBad(card) {
 function humanDraw() {
   if (state.phase !== "play") return;
   if (state.turn !== 0 || state.busy) { toast("现在是 " + nameOf(state.turn) + " 的回合。"); return; }
+  // 被 +2/+4 挑战时，点山牌 = 放弃接牌、摸走全部累加罚牌
+  if (state.challenge && state.challenge.target === 0) { acceptPenalty(0); return; }
   if (state.drawnThisTurn) { toast("本回合已经摸过牌了，请按「结束回合」。"); return; }
   const c = drawOne(0);
   state.drawnThisTurn = true;
@@ -999,6 +1058,7 @@ function humanEndTurn() {
 function endGame(winner) {
   state.phase = "over";
   state.busy = true;
+  state.challenge = null;
   renderAll();
   const win = winner === 0;
   $("resTitle").textContent = win ? "あなたの勝ち！おめでとう" : nameOf(winner) + " の勝ち…";
@@ -1071,9 +1131,48 @@ function pickWildColor(pid, card) {
   });
   return best;
 }
+// ---------- +2/+4 接牌挑战 ----------
+// 接不上（或主动放弃）：摸走全部累加罚牌，本回合作废，轮到下一位
+function acceptPenalty(pid) {
+  const ch = state.challenge;
+  if (!ch || ch.target !== pid || state.phase !== "play") return;
+  state.challenge = null;
+  const who = nameOf(pid);
+  const got = drawN(pid, ch.total);
+  const h = state.players[pid].hand;
+  state.lastDrawn = (pid === 0 && h.length) ? h[h.length - 1].uid : "";
+  showBanner("罰", "摸走 " + got + " 张罚牌");
+  log(who + " 接不上挑战 → 摸走全部累加罚牌 " + got + " 张，本回合跳过");
+  sfx("draw");
+  state.busy = true;
+  renderAll();
+  setTimeout(function () { advance(1); beginTurn(); }, 1050);
+}
+// AI 应对挑战：+2 链优先用 々 接（省下 +4），否则用 +4；都没有则吃罚牌
+function aiChallengeTurn() {
+  if (state.phase !== "play" || isHuman(state.turn)) return;
+  const pid = state.turn;
+  const ch = state.challenge;
+  if (!ch || ch.target !== pid) { aiTurn(); return; }
+  const p = state.players[pid];
+  let pick = null;
+  if (ch.mode === "draw2") {
+    for (let i = 0; i < p.hand.length; i++) { if (p.hand[i].kind === "draw2") { pick = p.hand[i]; break; } }
+  }
+  if (!pick) {
+    for (let i = 0; i < p.hand.length; i++) { if (p.hand[i].kind === "wild4") { pick = p.hand[i]; break; } }
+  }
+  if (pick) {
+    log(nameOf(pid) + " 用 " + pick.face + "(" + pick.romaji + ") 接上挑战。");
+    setTimeout(function () { commitPlay(pid, pick, pickWildColor(pid, pick)); }, 340);
+    return;
+  }
+  setTimeout(function () { acceptPenalty(pid); }, 420);
+}
 function aiTurn() {
   if (state.phase !== "play" || isHuman(state.turn)) return;
   const pid = state.turn;
+  if (state.challenge && state.challenge.target === pid) { aiChallengeTurn(); return; }
   const p = state.players[pid];
   const options = playableHand(pid);
   if (!options.length) {
@@ -1197,10 +1296,10 @@ function buildLegend(tableEl, symEl) {
   symEl.textContent = "";
   const syms = [
     ["〆", "sime", "パス / 跳过下家", "赤青緑黄紫 各1枚"],
-    ["々", "noma", "+2 / 下家摸2并跳过", "赤青緑黄紫 各1枚"],
+    ["々", "noma", "+2 接牌挑战 / 下家只能用 +2 或 +4 接，接不上摸全部累加罚牌", "赤青緑黄紫 各1枚"],
     ["ゐヰゑヱ", "wi we", "リバース / 反转（一张牌・2*2 排列）", "青 1枚・紫 1枚"],
     ["んン", "n", "万能 / 指定颜色", "黒 4枚"],
-    ["+4 んン", "+4 n", "万能+4 / 下家摸4并跳过", "黒 4枚"]
+    ["+4 んン", "+4 n", "+4 接牌挑战 / 此后只能出 +4，接不上摸全部累加罚牌", "黒 4枚"]
   ];
   syms.forEach(function (s) {
     const chip = el("span", "sym-chip");
