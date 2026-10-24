@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文本正则替换工具</title>
+  <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f4f7f6;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box;
+        }
+        .container {
+            background: white; padding: 30px; border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 650px;
+        }
+        h2 { text-align: center; color: #333; margin-top: 0; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #444; font-size: 14px; }
+        textarea {
+            width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 8px;
+            resize: vertical; min-height: 120px; box-sizing: border-box;
+            font-size: 16px; line-height: 1.6; font-family: monospace, inherit;
+            transition: border-color 0.2s; white-space: pre-wrap; overflow-wrap: break-word;
+        }
+        textarea:focus { outline: none; border-color: #4a90e2; }
+        .btn-group { display: flex; gap: 12px; margin: 20px 0; }
+        button {
+            flex: 1; padding: 14px; border: none; border-radius: 8px;
+            font-size: 16px; cursor: pointer; font-weight: 600; transition: all 0.2s ease;
+        }
+        .btn-replace { background: #4a90e2; color: white; }
+        .btn-replace:hover { background: #357abd; transform: translateY(-1px); }
+        .btn-copy { background: #28a745; color: white; }
+        .btn-copy:hover { background: #218838; transform: translateY(-1px); }
+        .toast {
+            position: fixed; top: 20px; left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: rgba(0,0,0,0.85); color: white; padding: 12px 24px;
+            border-radius: 25px; font-size: 14px;
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            z-index: 9999; pointer-events: none;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<div class="container">
+  <h2>📝 正则替换工具</h2>
+
+  <label for="inputText">输入文本：</label>
+  <textarea id="inputText" placeholder="在此粘贴或输入文本..."></textarea>
+
+  <div class="btn-group">
+    <button class="btn-replace" onclick="performReplace()">🔄 执行替换</button>
+    <button class="btn-copy" onclick="copyResult()">📋 复制输出结果</button>
+  </div>
+
+  <label>输出结果（纯文本）：</label>
+  <textarea id="outputText" readonly placeholder="等待输入..."></textarea>
+</div>
+
+<script>
+    // ==========================================
+    // 🔧 严格按照指定的正则和替换规则（零修改）
+    // ==========================================
+    const regex = /\[size=(\d+)\]\*\*\[color=(#[0-9a-fA-F]{6})\](.*?)\[\/color\](&emsp;.*?)\*\*\[\/size\]/g;
+    const replacement = '<span style="font-size: $1%; font-weight: bold;"><span style="color: $2;">$3</span>$4</span>';
+
+    // ==========================================
+    // 🔑 写死的关键词替换逻辑
+    // ==========================================
+    const KEYWORD_RULES = [
+        { from: 'upload://lNNmke4Rt1sobiuTpOTCDBCagvO.jpeg', to: 'https://notes.sjtu.edu.cn/uploads/upload_2640acfa7725b670d5667b65ebd14a92.jpg' },
+        { from: 'upload://se0y11MOieJVQ7eT8Cs6trpkZ82.jpeg', to: 'https://notes.sjtu.edu.cn/uploads/upload_0aef8440bb7183689a3df8025d647450.jpg' },
+        { from: 'upload://wz3usDAa9tEzJm7bruK9oQEIsYH.jpeg', to: 'https://notes.sjtu.edu.cn/uploads/upload_ce18ed87ba73194dbaef490976dc70f6.jpg' },
+        { from: 'upload://mPmxor8oO9lVVCLrY0CaXnLOlDt.jpeg', to: 'https://notes.sjtu.edu.cn/uploads/upload_19ce46d6b3c59ad93943387756860c41.jpg' },
+        { from: 'upload://sPObT1Yrs0ADAI4pKMrXzEnmIXW.jpeg', to: 'https://notes.sjtu.edu.cn/uploads/d8e24ef3-378a-44da-8e9e-aae47d7b8db9.jpg' },
+        { from: 'upload://91vm2qlkvX8ZhH2HQTabnMJAUxH.jpeg', to: 'https://notes.sjtu.edu.cn/uploads/upload_4673302f620d1c5223d8b5472457a5a9.jpg' },
+        { from: 'upload://a5tp6eOPiuq9rfN5hDkN5RPfgcN.jpeg', to: 'https://notes.sjtu.edu.cn/uploads/upload_0ce358d41e4cc44e4c136006e8593c2d.jpg' },
+        { from: 'upload://1HELd5xowL0VjRlMTtVeNIHL3l8.jpeg', to: 'https://notes.sjtu.edu.cn/uploads/upload_1e3c2c1a47b0e1dc9e894906885ec8d3.jpg' },
+        { from: 'upload://ga5uYO4StMv7FEOedkq2vP8X4HL.jpeg', to: 'https://notes.sjtu.edu.cn/uploads/upload_7aec699925473c52924bccccdbfaaf07.jpg' },
+        { from: 'upload://qcnYhjo3PBzBMXCSmnexY6dIWwJ.jpeg', to: 'https://notes.sjtu.edu.cn/uploads/upload_2b19de44ff28ba360a3570836c3a950e.jpg' },
+        { from: 'upload://fKNMqGAJpjhIBY3CFLEJbd29dUC.jpeg', to: 'https://notes.sjtu.edu.cn/uploads/upload_19ce46d6b3c59ad93943387756860c41.jpg' },
+        { from: 'upload://e8UTRNmY0GTXGI9eyU6K7a7mA8o.jpeg', to: 'https://notes.sjtu.edu.cn/uploads/upload_802d7eb9063d96f5d47e3af5e85a7ac6.jpg' },
+
+    ];
+
+    function performReplace() {
+        const raw = document.getElementById('inputText').value;
+        const outEl = document.getElementById('outputText');
+
+        if (!raw) {
+            outEl.value = "";
+            return;
+        }
+
+        // 第一步：执行正则替换
+        let result = raw.replace(regex, replacement);
+
+        // 第二步：执行写死的关键词替换
+        KEYWORD_RULES.forEach(rule => {
+            // 使用全局替换，避免只替换第一个匹配项
+            result = result.split(rule.from).join(rule.to);
+        });
+
+        // 直接写入纯文本输出框，不做任何转义或渲染
+        outEl.value = result;
+    }
+
+    async function copyResult() {
+        const outEl = document.getElementById('outputText');
+        const textToCopy = outEl.value;
+
+        if (!textToCopy) {
+            showToast("⚠️ 暂无可复制的内容");
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(textToCopy);
+            showToast("✅ 已复制到剪贴板");
+        } catch {
+            outEl.select();
+            document.execCommand('copy');
+            window.getSelection().removeAllRanges();
+            showToast("✅ 已复制到剪贴板");
+        }
+    }
+
+    function showToast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(el._timer);
+        el._timer = setTimeout(() => el.classList.remove('show'), 2000);
+    }
+</script>
+
+</body>
+</html>
