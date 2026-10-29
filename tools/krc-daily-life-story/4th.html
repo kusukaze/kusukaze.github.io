@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4th</title>
+    <style>
+        .audio-list {
+            display: flex;
+            flex-direction: column; /* 四个项目垂直排列（换行） */
+            gap: 12px;              /* 项目之间的间距 */
+        }
+        .audio-item {
+            display: flex;
+            align-items: center;    /* 编号与音频垂直居中对齐 */
+            gap: 8px;               /* 编号与音频之间的间距 */
+        }
+    </style>
+</head>
+<body>
+<div class="audio-list">
+    <div class="audio-item">
+        <span>1.</span>
+        <audio controls preload="metadata">
+            <source src="audio/メロディー.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+    <div class="audio-item">
+        <span>2.</span>
+        <audio controls preload="metadata">
+            <source src="audio/鉄腕アトムb.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+    <div class="audio-item">
+        <span>3.</span>
+        <audio controls preload="metadata">
+            <source src="audio/キッズステーション.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+    <div class="audio-item">
+        <span>4.</span>
+        <audio controls preload="metadata">
+            <source src="audio/たなばたさまC.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+</div>
+</body>
+</html>
