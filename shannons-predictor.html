@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>香农的预测机</title>
+<script type='text/javascript' src='tools/verb/js/romaji.js'></script>
+<style>
+/* SECTION: tokens */
+:root{
+  --paper:#f6f2e9;
+  --paper-2:#fffdf8;
+  --ink:#22262b;
+  --ink-soft:#5a6068;
+  --line:#d9d2c2;
+  --accent:#2f6b4f;
+  --ok-bg:#dff3e4;
+  --ok-fg:#146b39;
+  --ok-line:#7fc79a;
+  --bad-bg:#fbe2dc;
+  --bad-fg:#b23a24;
+  --bad-line:#e59b86;
+  --shadow:0 10px 30px rgba(45,40,25,.10);
+  --radius:14px;
+  --font:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Source Han Sans SC","Noto Sans SC","WenQuanYi Micro Hei",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  background-image:radial-gradient(circle at 12% 8%,rgba(47,107,79,.07),transparent 45%),radial-gradient(circle at 88% 0%,rgba(178,58,36,.06),transparent 40%);
+  color:var(--ink);
+  font-family:var(--font);
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+
+/* SECTION: header */
+.topbar{
+  position:sticky;top:0;z-index:20;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+  padding:16px 20px 12px;
+  padding-top:calc(16px + env(safe-area-inset-top));
+  background:rgba(246,242,233,.94);
+  backdrop-filter:blur(6px);
+  border-bottom:1px solid var(--line);
+}
+.brand h1{margin:0;font-size:22px;letter-spacing:.5px}
+.brand .sub{margin:4px 0 0;font-size:12px;color:var(--ink-soft)}
+.hud{display:flex;align-items:stretch;gap:10px;flex-shrink:0}
+.stat{
+  min-width:104px;padding:6px 12px;
+  background:var(--paper-2);border:1px solid var(--line);border-radius:12px;
+  text-align:right;
+}
+.stat-label{display:block;font-size:11px;color:var(--ink-soft);letter-spacing:.5px}
+.stat-value{display:block;font-size:22px;font-weight:700;line-height:1.25;font-variant-numeric:tabular-nums}
+.stat.saving .stat-value{color:var(--accent)}
+.icon-btn{
+  width:44px;height:44px;align-self:center;flex-shrink:0;
+  border-radius:50%;border:1.5px solid var(--ink);background:var(--ink);color:#fff;
+  font-size:20px;font-weight:700;font-family:var(--font);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.icon-btn:active{transform:scale(.94)}
+
+/* SECTION: meta */
+.metabar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:10px 20px;font-size:13px;color:var(--ink-soft);
+  border-bottom:1px dashed var(--line);
+}
+.metabar b{color:var(--ink);font-weight:600}
+.metabar .spacer{flex:1 1 auto}
+.ghost-btn{
+  min-height:36px;padding:6px 14px;font-size:13px;font-family:var(--font);
+  color:var(--ink);background:transparent;border:1px solid var(--line);
+  border-radius:999px;cursor:pointer;
+}
+.ghost-btn:active{background:#efe9dc}
+
+/* SECTION: stage */
+.stage{flex:1 1 auto;display:flex;flex-direction:column;min-height:0;padding:0 20px}
+.board{
+  margin:16px auto 0;width:100%;max-width:880px;flex:1 1 auto;min-height:180px;
+  background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.stream{
+  flex:1 1 auto;min-height:0;overflow-y:auto;
+  padding:22px 24px 10px;
+  font-size:23px;line-height:2.15;letter-spacing:.5px;
+  word-break:break-all;
+}
+.ch{
+  display:inline-block;border-radius:6px;padding:1px 2px;margin:0 1px;
+  border:1px solid transparent;
+}
+.ch.plain{color:var(--ink)}
+.ch.given{color:var(--ink);background:#ece5d5;border-color:#ded5c0}
+.ch.other{color:#a49c8c}
+.ch.correct{background:var(--ok-bg);color:var(--ok-fg);border-color:var(--ok-line)}
+.ch.wrong{background:var(--bad-bg);color:var(--bad-fg);border-color:var(--bad-line);font-weight:700}
+.ch .echo{
+  font-size:11px;line-height:1;color:var(--bad-fg);opacity:.85;
+  margin-left:1px;vertical-align:super;letter-spacing:0;
+}
+.cursor{
+  display:inline-block;width:2px;height:1.05em;vertical-align:-.16em;
+  background:var(--accent);margin-left:2px;animation:blink 1.1s steps(1,end) infinite;
+}
+@keyframes blink{50%{opacity:0}}
+.finish-mark{color:var(--accent);font-size:14px;margin-left:6px}
+
+/* SECTION: feedback */
+.tally{
+  display:flex;gap:14px;flex-wrap:wrap;align-items:center;
+  padding:8px 24px 12px;font-size:13px;color:var(--ink-soft);
+  border-top:1px solid #eee6d6;background:#fbf8f1;
+}
+.tally .pill{padding:3px 10px;border-radius:999px;background:#efe9dc;font-variant-numeric:tabular-nums}
+.tally .pill.ok{background:var(--ok-bg);color:var(--ok-fg)}
+.tally .pill.bad{background:var(--bad-bg);color:var(--bad-fg)}
+.say{padding:6px 24px 14px;font-size:13px;color:var(--ink-soft);min-height:28px}
+.say.bad{color:var(--bad-fg)}
+.say.ok{color:var(--ok-fg)}
+
+/* SECTION: inputbar */
+.inputbar{
+  position:sticky;bottom:0;z-index:15;
+  display:flex;gap:10px;align-items:center;
+  padding:12px 20px 16px;
+  padding-bottom:calc(16px + env(safe-area-inset-bottom));
+  background:rgba(246,242,233,.95);backdrop-filter:blur(6px);
+  border-top:1px solid var(--line);
+  max-width:920px;width:100%;margin:0 auto;
+}
+.inputbar input{
+  flex:1 1 auto;min-width:0;height:48px;padding:0 16px;
+  font-family:var(--font);font-size:18px;color:var(--ink);
+  background:var(--paper-2);border:1.5px solid var(--line);border-radius:12px;
+}
+.inputbar input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,107,79,.14)}
+.go{
+  height:48px;min-width:88px;padding:0 22px;border:none;border-radius:12px;
+  background:var(--accent);color:#fff;font-size:17px;font-weight:600;font-family:var(--font);
+  cursor:pointer;
+}
+.go:active{transform:translateY(1px)}
+.go[disabled]{opacity:.45;cursor:not-allowed}
+.kbd-hint{font-size:12px;color:var(--ink-soft);white-space:nowrap}
+
+/* SECTION: modal */
+.mask{
+  position:fixed;inset:0;z-index:40;display:none;
+  align-items:center;justify-content:center;padding:18px;
+  background:rgba(34,38,43,.42);
+}
+.mask.show{display:flex}
+.sheet{
+  width:100%;max-width:600px;max-height:86vh;overflow-y:auto;
+  background:var(--paper-2);border:1px solid var(--line);border-radius:16px;
+  box-shadow:0 20px 60px rgba(0,0,0,.24);padding:22px 22px 18px;
+}
+.sheet h2{margin:0 0 10px;font-size:19px}
+.sheet h2 span{font-size:12px;color:var(--ink-soft);font-weight:400;margin-left:8px}
+.rules{margin:0;padding-left:0;list-style:none;font-size:14.5px;line-height:1.75}
+.rules li{margin:0 0 9px;padding-left:26px;position:relative}
+.rules li::before{
+  content:attr(data-i);position:absolute;left:0;top:2px;
+  width:20px;height:20px;border-radius:6px;background:#ece5d5;color:var(--ink-soft);
+  font-size:11.5px;display:flex;align-items:center;justify-content:center;font-weight:700;
+}
+.rules em{font-style:normal;color:var(--accent);font-weight:600}
+.rules .g{color:var(--ok-fg);font-weight:700}
+.rules .r{color:var(--bad-fg);font-weight:700}
+.sheet .close{margin-top:14px;width:100%;height:44px;border:none;border-radius:12px;background:var(--ink);color:#fff;font-size:15px;font-family:var(--font);cursor:pointer}
+.big-rate{font-size:56px;font-weight:800;color:var(--accent);line-height:1.1;font-variant-numeric:tabular-nums;margin:6px 0 2px}
+.rate-note{font-size:13px;color:var(--ink-soft);margin:0 0 14px}
+.endgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:0 0 16px}
+.endgrid div{background:#f6f1e6;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.endgrid span{display:block;font-size:12px;color:var(--ink-soft)}
+.endgrid b{font-size:20px;font-variant-numeric:tabular-nums}
+.endbtns{display:flex;gap:10px;flex-wrap:wrap}
+.endbtns button{flex:1 1 150px;height:44px;border-radius:12px;font-size:15px;font-family:var(--font);cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink)}
+.endbtns button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+
+/* SECTION: responsive */
+@media (max-width:760px){
+  .topbar{flex-direction:column;gap:10px;padding:12px 14px 10px}
+  .hud{width:100%;justify-content:flex-end}
+  .brand h1{font-size:19px}
+  .stat{min-width:0;flex:1 1 auto;padding:5px 10px}
+  .stat-value{font-size:18px}
+  .metabar{padding:9px 14px;font-size:12.5px}
+  .stage{padding:0 12px}
+  .stream{font-size:19px;line-height:2.25;padding:16px 15px 8px}
+  .tally{padding:8px 15px 10px;font-size:12px}
+  .say{padding:4px 15px 12px;font-size:12.5px}
+  .inputbar{padding:10px 12px 14px}
+  .inputbar input{font-size:16px;height:46px}
+  .go{min-width:76px;padding:0 16px}
+  .kbd-hint{display:none}
+  .sheet{padding:18px 16px 14px}
+  .big-rate{font-size:44px}
+}
+@media (prefers-reduced-motion:reduce){
+  .cursor{animation:none;opacity:1}
+  *{transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- SECTION: header -->
+<header class="topbar">
+  <div class="brand">
+    <h1>香农的预测机</h1>
+    <p class="sub">逐假名猜测 · 猜得中，就说明这篇文章还能再压缩</p>
+  </div>
+  <div class="hud">
+    <div class="stat progress"><span class="stat-label">猜测进度</span><span class="stat-value" id="statProgress">0%</span></div>
+    <div class="stat saving"><span class="stat-label">空间节约比例</span><span class="stat-value" id="statSaving">0%</span></div>
+    <button class="icon-btn" id="helpBtn" type="button" aria-label="查看游戏规则">?</button>
+  </div>
+</header>
+
+<!-- SECTION: meta -->
+<div class="metabar">
+  <span>本篇：<b id="mName">—</b></span>
+  <span>偏移量 n = <b id="mOffset">0</b>（前 n 个假名直接给出，不参与猜测）</span>
+  <span>待猜假名 <b id="mTotal">0</b> 个</span>
+  <span class="spacer"></span>
+  <button class="ghost-btn" id="revealBtn" type="button">查看全文</button>
+  <button class="ghost-btn" id="restartBtn" type="button">换一篇重新开始</button>
+</div>
+
+<!-- SECTION: stage -->
+<main class="stage">
+  <section class="board">
+    <div class="stream" id="stream" aria-live="polite"></div>
+    <div class="say" id="say">在下方输入框里写下你猜的下一个假名，回车提交。</div>
+    <div class="tally">
+      <span class="pill" id="pillGuessed">已猜 0</span>
+      <span class="pill ok" id="pillCorrect">猜对 0</span>
+      <span class="pill bad" id="pillWrong">猜错 0</span>
+      <span class="pill" id="pillLeft">剩余 0</span>
+    </div>
+  </section>
+</main>
+
+<!-- SECTION: inputbar -->
+<form class="inputbar" id="form">
+  <input id="guess" type="text" autocomplete="off" spellcheck="false" inputmode="text"
+         placeholder="输入假名，如：か / ka 的假名，可一次输入一串" aria-label="输入你猜的假名" data-primary-action>
+  <button class="go" id="goBtn" type="submit" data-primary-action>猜</button>
+  <span class="kbd-hint">回车提交</span>
+</form>
+
+<!-- SECTION: modal rules -->
+<div class="mask" id="rulesMask" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+  <div class="sheet">
+    <h2 id="rulesTitle">游戏规则<span>Shannon's Prediction Machine</span></h2>
+    <ol class="rules">
+      <li data-i="1">屏幕上随机给出<em>一篇日语文章</em>，你从头开始<em>逐个猜测下一个假名</em>。</li>
+      <li data-i="2">猜对：该假名标为<em class="g">绿色</em>；猜错：<em>显示正确答案</em>并标为<em class="r">红色</em>（右上角小字是你猜的假名）。无论对错都前进到下一个假名。</li>
+      <li data-i="3">遇到<em>标点、空格、数字、引号、长音符「ー」等非假名内容</em>：直接跳过、不用猜，页面上以灰色原样显示，也不标颜色。</li>
+      <li data-i="4">输入框一次输入多个假名，等同于<em>连续多轮猜测</em>；一旦输入里出现非假名字符，<em>该字符及其之后的内容全部忽略</em>。</li>
+      <li data-i="5">猜测<em>不区分平假名与片假名</em>（シ 与 し 算同一个）。<em>拗音拆成两个假名</em>：しょ ＝ シ ＋ ョ，是两个待猜位置。</li>
+      <li data-i="6">每篇文章都带一个偏移量 n：<em>前 n 个假名直接给出</em>（米色底，不标色、不参与猜测），作为你的语境起点。</li>
+      <li data-i="7">右上角实时显示：<em>猜测进度</em> ＝ 已猜假名数 ÷ 待猜假名总数 × 100%；<em>空间节约比例</em> ＝ 猜对假名数 ÷ 已猜假名总数 × 100%。两者四舍五入取整数，非假名字符不计入。</li>
+      <li data-i="8">全部猜完后弹出<em>总的空间节约比例</em>（算法同上）。比例越高，说明这篇文章越好预测、可压缩的余地越大。</li>
+      <li data-i="9">文章正文全部用假名书写（汉字均已转写为假名），点「换一篇重新开始」会随机抽取另一篇。</li>
+    </ol>
+    <button class="close" id="rulesClose" type="button">开始猜测</button>
+  </div>
+</div>
+
+<!-- SECTION: modal result -->
+<div class="mask" id="resultMask" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+  <div class="sheet">
+    <h2 id="resultTitle">猜测结束<span id="rName"></span></h2>
+    <div class="big-rate" id="rRate">0%</div>
+    <p class="rate-note">总的空间节约比例 ＝ 猜对假名数 ÷ 已猜假名总数 × 100%</p>
+    <div class="endgrid">
+      <div><span>待猜假名</span><b id="rTotal">0</b></div>
+      <div><span>已猜</span><b id="rGuessed">0</b></div>
+      <div><span>猜对</span><b id="rCorrect">0</b></div>
+      <div><span>猜错</span><b id="rWrong">0</b></div>
+    </div>
+    <p class="rate-note" id="rComment"></p>
+    <div class="endbtns">
+      <button type="button" id="rReveal">回到文章</button>
+      <button type="button" class="primary" id="rNext">换一篇随机文章</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* SECTION: data */
+"use strict";
+/* 内置文章：日语正文，汉字已全部转写为假名；n = 偏移量（前 n 个假名直接给出） */
+const ARTICLES=[
+  {name:"信息量的测定实验",n:20,text:"これは、じょうほうりょうをたしかめるじっけんです。にほんごのぶんしょうをよんでいると、ついつぎのことばをよそうとしたくなります。たとえば『おはよう』のつぎには『ございます』がくることがおおいでしょう。あるていどのけいけんがあれば、つぎのかなをすくないかずでただしくあてられます。1948ねん、しゃのんのはかせは、このようにひとがもつよそうのちからをはかり、しょうそくひとつあたりのじょうほうりょうをていぎしました。あたるわりあいがたかいぶんしょうほど、ふごうをすくないもじかずでおさえることができます。"},
+  {name:"雪がふるとは",n:16,text:"あしたはゆきがふるといわれていました。こんや、そらがあおくはれていて、つきのまわりにうすいかさがみえなければ、そのよそうはあたらないとおもいます。てんきのはなしは、だれでもつぎのしゅんかんをよそうしているよいれいです。ラジオでは、12じごろからあめがふるといっていました。だから、でかけるときはかさをもっていったほうがよさそうです。ゆきであれあめであれ、ひとはいつも、そらのいろやかぜづかいから、つぎをよみあげているのです。"},
+  {name:"语言模型的一课",n:24,text:"げんごモデルのきほんのしごとは、このゲームとおなじです。ぶんしょうをひとはすずつよみながら、つぎのかなをあてます。モデルがただしいこたえをつぎつぎとだすほど、よそうのちからがたかいことがわかります。そして、あたるわりあいがたかいほど、ふごうをすくないもじかずでおさえることができます。つまり、あなたがただしくあてられるりと、ぶんしょうをせつやくできるよくちは、おなじものさしではかれています。だから、あてられないぶぶんこそが、ほんとうのじょうほうりょうなのです。"},
+  {name:"ねこの朝",n:18,text:"うちのねこは、あさの7じになると、かならずわたしのふとんのうえにのってきます。ごはんをねだっているのでしょう、めのたかさがいつもよりひくいようにみえます。やわらかいひがまどのふちからはいってきて、ねこのうしろすがたがきゅっとまるくなります。こういうとき、ひとはつい、つぎのしぐさをさきまわりしてそうぞうしてしまいます。でも、ねこのこうどうは、よそうできないほうがとうぜんなのだと、ねこじしんがいつでもおしえてくれます。"}
+];
+
+/* SECTION: kana util */
+function isKanaChar(ch){
+  const c=ch.codePointAt(0);
+  return (c>=0x3041&&c<=0x3096)||(c>=0x30A1&&c<=0x30FA);
+}
+function normKana(ch){
+  const s=String(ch).normalize("NFKC");
+  let out="";
+  for(const c of Array.from(s)){
+    const k=c.codePointAt(0);
+    out+=(k>=0x30A1&&k<=0x30FA)?String.fromCodePoint(k-0x60):c;
+  }
+  return out;
+}
+function $(id){return document.getElementById(id)}
+const streamEl=$("stream"), sayEl=$("say"), guessEl=$("guess");
+const rulesMask=$("rulesMask"), resultMask=$("resultMask");
+let S=null;
+
+/* SECTION: state */
+function buildState(art){
+  const items=Array.from(art.text).map(ch=>({ch:ch,kana:isKanaChar(ch),state:"hidden",kanaIdx:-1,echo:""}));
+  let c=0;
+  for(const it of items){ if(it.kana){ it.kanaIdx=c; c++; } }
+  const total=c;
+  const off=Math.max(0,Math.min(art.n|0,total-1));
+  return {name:art.name,items:items,totalKana:total,offset:off,need:Math.max(0,total-off),
+          guessed:0,correct:0,cursor:-1,done:false,showAll:false};
+}
+function startGame(idx){
+  S=buildState(ARTICLES[idx]);
+  S.idx=idx;
+  let p=0;
+  while(p<S.items.length && !(S.items[p].kana && S.items[p].kanaIdx>=S.offset)) p++;
+  for(let i=0;i<p;i++) S.items[i].state = S.items[i].kana ? "given" : "other";
+  S.cursor=p;
+  if(p>=S.items.length||S.need<=0) S.done=true;
+  $("mName").textContent=S.name;
+  $("mOffset").textContent=String(S.offset);
+  $("mTotal").textContent=String(S.need);
+  $("revealBtn").textContent="查看全文";
+  guessEl.disabled=S.done;
+  setSay("先读一读给出的开头，再猜下一个假名。猜不准则看红色里的正确答案。","");
+  hideMask(resultMask);
+  render(); updateHud();
+  if(!S.done) guessEl.focus();
+}
+function randomOther(){
+  if(ARTICLES.length<2) return 0;
+  let i;
+  do{ i=Math.floor(Math.random()*ARTICLES.length); }while(i===S.idx);
+  return i;
+}
+
+/* SECTION: render */
+function render(){
+  const nearBottom = streamEl.scrollHeight-streamEl.scrollTop-streamEl.clientHeight < 120;
+  streamEl.textContent="";
+  const frag=document.createDocumentFragment();
+  for(const it of S.items){
+    if(it.state==="hidden" && !S.showAll) continue;
+    const sp=document.createElement("span");
+    let cls="ch";
+    if(it.state==="correct") cls+=" correct";
+    else if(it.state==="wrong") cls+=" wrong";
+    else if(it.state==="given") cls+=" given";
+    else if(it.state==="other") cls+=" other";
+    else cls+=" plain";
+    sp.className=cls;
+    sp.textContent=it.ch;
+    if(it.state==="wrong"&&it.echo){
+      const e=document.createElement("span");
+      e.className="echo";
+      e.textContent=""+it.echo;
+      sp.appendChild(e);
+    }
+    frag.appendChild(sp);
+  }
+  if(!S.done){
+    const cur=document.createElement("span");
+    cur.className="cursor";
+    frag.appendChild(cur);
+  }else{
+    const fin=document.createElement("span");
+    fin.className="finish-mark";
+    fin.textContent="— 本篇猜测结束 —";
+    frag.appendChild(fin);
+  }
+  streamEl.appendChild(frag);
+  if(nearBottom) streamEl.scrollTop=streamEl.scrollHeight;
+}
+function updateHud(){
+  const prog=S.need>0?Math.round(S.guessed/S.need*100):100;
+  const save=S.guessed>0?Math.round(S.correct/S.guessed*100):0;
+  $("statProgress").textContent=prog+"%";
+  $("statSaving").textContent=save+"%";
+  $("pillGuessed").textContent="已猜 "+S.guessed;
+  $("pillCorrect").textContent="猜对 "+S.correct;
+  $("pillWrong").textContent="猜错 "+(S.guessed-S.correct);
+  $("pillLeft").textContent="剩余 "+Math.max(0,S.need-S.guessed);
+}
+function setSay(msg,kind){
+  sayEl.textContent=msg;
+  sayEl.className="say"+(kind?" "+kind:"");
+}
+function showMask(el){el.classList.add("show")}
+function hideMask(el){el.classList.remove("show")}
+
+/* SECTION: gameplay */
+function guessOne(rawCh){
+  const it=S.items[S.cursor];
+  const right=normKana(rawCh)===normKana(it.ch);
+  it.state=right?"correct":"wrong";
+  if(!right) it.echo=rawCh;
+  S.guessed++;
+  if(right) S.correct++;
+  let p=S.cursor+1;
+  while(p<S.items.length && !S.items[p].kana){ S.items[p].state="other"; p++; }
+  if(p>=S.items.length||S.guessed>=S.need){ S.cursor=-1; S.done=true; }
+  else S.cursor=p;
+  return {right:right,target:it.ch};
+}
+function submit(){
+  if(!S) return;
+  if(S.done){ setSay("这一篇已经猜完了，点右上角的问号看规则，或换一篇重新开始。",""); return; }
+  const raw=(guessEl.value||"").replace(/^[\s\u3000]+/,"").replace(/[\s\u3000]+$/,"");
+  if(!raw){ setSay("输入是空的，写下一个假名再提交。","bad"); return; }
+  const raw2Kana=romaji_to_hiragana(raw);
+  const chars=Array.from(raw2Kana.normalize("NFKC"));
+  let count=0,hit=0,ignored=false,last=null;
+  for(const c of chars){
+    if(!isKanaChar(c)){ ignored=true; break; }
+    if(S.done) break;
+    last=guessOne(c); count++;
+    if(last.right) hit++;
+  }
+  guessEl.value="";
+  render(); updateHud();
+  if(count===0){ setSay("这一串里第一个字符就不是假名，本轮没有计入猜测。","bad"); }
+  else{
+    let msg="本轮猜 "+count+" 个，对 "+hit+" 个。";
+    if(last&&!last.right) msg+="上一个正确答案是「"+last.target+"」。";
+    if(ignored) msg+=" 输入中遇到非假名字符，该字符及其之后的内容已忽略。";
+    setSay(msg,last&&last.right?"ok":(last?"bad":""));
+  }
+  if(S.done) finish(false);
+  else guessEl.focus();
+}
+function comment(rate){
+  if(rate>=60) return "命中率很高：这篇文章冗余度大，可压缩的余地充足。";
+  if(rate>=40) return "中等偏上：你已经明显强于随机瞎猜（假名表约 70 个字符，随机基线只有 1% 出头）。";
+  if(rate>=20) return "偏低：这篇文章对你来说相当难预测，信息量比较密。";
+  return "接近随机水平：几乎猜不出规律，能省下的空间很小。";
+}
+function finish(fromButton){
+  S.showAll=true;
+  S.done=true;
+  guessEl.disabled=true;
+  $("revealBtn").textContent="收起未猜部分";
+  render(); updateHud();
+  const rate=S.guessed>0?Math.round(S.correct/S.guessed*100):0;
+  $("rName").textContent=S.name;
+  $("rRate").textContent=rate+"%";
+  $("rTotal").textContent=String(S.need);
+  $("rGuessed").textContent=String(S.guessed);
+  $("rCorrect").textContent=String(S.correct);
+  $("rWrong").textContent=String(S.guessed-S.correct);
+  $("rComment").textContent=(fromButton?"你在猜完之前展开了全文，":"")+comment(rate);
+  setSay("本篇结束：总的空间节约比例为 "+rate+"%。","ok");
+  showMask(resultMask);
+}
+
+/* SECTION: wire */
+$("form").addEventListener("submit",function(ev){ ev.preventDefault(); submit(); });
+$("helpBtn").addEventListener("click",function(){ showMask(rulesMask); });
+$("rulesClose").addEventListener("click",function(){ hideMask(rulesMask); guessEl.focus(); });
+rulesMask.addEventListener("click",function(ev){ if(ev.target===rulesMask) hideMask(rulesMask); });
+resultMask.addEventListener("click",function(ev){ if(ev.target===resultMask) hideMask(resultMask); });
+$("rNext").addEventListener("click",function(){ hideMask(resultMask); startGame(randomOther()); });
+$("restartBtn").addEventListener("click",function(){ startGame(randomOther()); });
+$("revealBtn").addEventListener("click",function(){
+  if(!S) return;
+  if(S.done){
+    S.showAll=!S.showAll;
+    $("revealBtn").textContent=S.showAll?"收起未猜部分":"查看全文";
+    render();
+  }else{
+    finish(true);
+  }
+});
+$("rReveal").addEventListener("click",function(){ hideMask(resultMask); });
+document.addEventListener("keydown",function(ev){
+  if(ev.key==="Escape"){ hideMask(rulesMask); hideMask(resultMask); }
+});
+startGame(Math.floor(Math.random()*ARTICLES.length));
+showMask(rulesMask);
+</script>
+</body>
+</html>
