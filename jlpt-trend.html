@@ -30,6 +30,9 @@
         }
         .tabs {
             display: flex;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            .tabs::-webkit-scrollbar { display: none; }
             background-color: #e9ecef;
         }
         .tab-button {
